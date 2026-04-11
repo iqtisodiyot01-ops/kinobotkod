@@ -70,20 +70,25 @@ export default function Movies() {
     setEditSaving(true); setEditError('')
     const oldCode = editMovie.code
     const newCode = editForm.code.trim()
-
-    if (oldCode !== newCode) {
-      await supabase.from('movies').delete().eq('code', oldCode)
-    }
-    const { error: err } = await supabase.from('movies').upsert({
+    const payload = {
       code: newCode,
       title: editForm.title.trim(),
       description: editForm.description.trim() || null,
       file_id: editForm.file_id.trim() || null,
       is_paid: editForm.is_paid,
       price: editForm.is_paid ? (parseInt(editForm.price) || 0) : 0,
-    })
-    setEditSaving(false)
-    if (err) { setEditError(err.message); return }
+    }
+
+    if (oldCode === newCode) {
+      const { error: err } = await supabase.from('movies').update(payload).eq('code', oldCode)
+      setEditSaving(false)
+      if (err) { setEditError(err.message); return }
+    } else {
+      const { error: insertErr } = await supabase.from('movies').insert(payload)
+      if (insertErr) { setEditSaving(false); setEditError(insertErr.message); return }
+      await supabase.from('movies').delete().eq('code', oldCode)
+      setEditSaving(false)
+    }
     setEditMovie(null)
     load()
   }
