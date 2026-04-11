@@ -4,10 +4,20 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def get_required_channels() -> list[dict]:
+def get_required_channels() -> list:
     try:
-        res = supabase.table("channels").select("*").eq("is_required", True).execute()
-        return res.data or []
+        res = supabase.table("channels").select("*").execute()
+        channels = res.data or []
+        result = []
+        for ch in channels:
+            if ch.get("is_required") is False:
+                continue
+            result.append({
+                "channel_id": ch.get("channel_id") or ch.get("username") or str(ch.get("id", "")),
+                "title": ch.get("title") or ch.get("username") or "Kanal",
+                "username": ch.get("username", ""),
+            })
+        return result
     except Exception as e:
         logger.error(f"get_required_channels error: {e}")
         return []
