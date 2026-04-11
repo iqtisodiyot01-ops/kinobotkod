@@ -29,20 +29,33 @@ def init():
     _init_schema()
 
 
-def register_user(user_id: int, full_name: str, username: str, referral_from: int = None) -> str:
+def _detect_lang(telegram_lang: str) -> str:
+    if not telegram_lang:
+        return "uz"
+    lc = telegram_lang.lower()
+    if lc.startswith("ru"):
+        return "ru"
+    if lc.startswith("en"):
+        return "en"
+    return "uz"
+
+
+def register_user(user_id: int, full_name: str, username: str,
+                  telegram_lang: str = None, referral_from: int = None) -> str:
     id_col = _SCHEMA["id"]
     lang_col = _SCHEMA["lang"]
     try:
         res = supabase.table("users").select(f"{id_col},{lang_col}").eq(id_col, user_id).limit(1).execute()
         if res.data:
             return res.data[0].get(lang_col, "uz") or "uz"
-        data = {id_col: user_id, lang_col: "uz"}
+        auto_lang = _detect_lang(telegram_lang)
+        data = {id_col: user_id, lang_col: auto_lang}
         if id_col == "telegram_id":
             data["full_name"] = full_name or ""
             data["username"] = username or ""
             data["is_premium"] = False
         supabase.table("users").insert(data).execute()
-        return "uz"
+        return auto_lang
     except Exception as e:
         logger.error(f"register_user error: {e}")
         return "uz"
