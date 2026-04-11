@@ -55,11 +55,18 @@ async def check_sub_callback(call: CallbackQuery, bot: Bot, lang: str):
     not_subbed = await check_subscription(bot, call.from_user.id)
     if not_subbed:
         await call.answer(get_text(lang, "not_subscribed_yet"), show_alert=True)
-        await call.message.edit_reply_markup(
-            reply_markup=get_subscription_keyboard(not_subbed, lang)
-        )
+        try:
+            await call.message.edit_reply_markup(
+                reply_markup=get_subscription_keyboard(not_subbed, lang)
+            )
+        except Exception:
+            pass
     else:
-        await call.message.delete()
+        await call.answer()
+        try:
+            await call.message.delete()
+        except Exception:
+            pass
         await call.message.answer(
             get_text(lang, "welcome").format(name=call.from_user.first_name),
             reply_markup=main_menu(lang)
