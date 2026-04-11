@@ -6,22 +6,19 @@ export default function Support() {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
   const [tableError, setTableError] = useState(null)
+  const [markingAll, setMarkingAll] = useState(false)
 
   const fetchMessages = async () => {
     setLoading(true)
     setTableError(null)
     let query = supabase.from('support_messages').select('*')
-    if (filter !== 'all') {
-      query = query.eq('status', filter)
-    }
+    if (filter !== 'all') query = query.eq('status', filter)
     const { data, error } = await query
     if (error) {
-      console.error('Support fetch error:', error)
       setTableError(error.message)
       setMessages([])
     } else {
-      const sorted = (data || []).sort((a, b) => b.id - a.id)
-      setMessages(sorted)
+      setMessages((data || []).sort((a, b) => b.id - a.id))
     }
     setLoading(false)
   }
@@ -33,30 +30,38 @@ export default function Support() {
     fetchMessages()
   }
 
+  const markAllRead = async () => {
+    setMarkingAll(true)
+    await supabase.from('support_messages').update({ status: 'read' }).eq('status', 'new')
+    setMarkingAll(false)
+    fetchMessages()
+  }
+
   const deleteMsg = async (id) => {
     if (!confirm("Xabarni o'chirasizmi?")) return
     await supabase.from('support_messages').delete().eq('id', id)
     fetchMessages()
   }
 
-  const newCount = messages.filter(m => m.status === 'new').length
+  const totalNew = messages.filter(m => m.status === 'new').length
+  const shownNew = filter === 'new' ? messages.length : filter === 'all' ? totalNew : 0
 
   return (
     <>
       <div className="page-title">
         📨 Foydalanuvchi Xabarlari
-        {newCount > 0 && (
+        {totalNew > 0 && (
           <span style={{
             marginLeft: 10, background: '#ef4444', color: '#fff',
             borderRadius: 20, padding: '2px 10px', fontSize: 14, fontWeight: 600
-          }}>{newCount} yangi</span>
+          }}>{totalNew} yangi</span>
         )}
       </div>
 
       <div className="card" style={{ marginBottom: 20 }}>
         <div className="card-header">
-          <span className="card-title">Xabarlar filtri</span>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <span className="card-title">Filtr</span>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {['all', 'new', 'read'].map(f => (
               <button
                 key={f}
@@ -64,16 +69,24 @@ export default function Support() {
                 style={filter !== f ? { background: '#2d3148', color: '#94a3b8' } : {}}
                 onClick={() => setFilter(f)}
               >
-                {f === 'all' ? 'Barchasi' : f === 'new' ? '🔴 Yangi' : '✅ O\'qilgan'}
+                {f === 'all' ? 'Barchasi' : f === 'new' ? '🔴 Yangi' : "✅ O'qilgan"}
               </button>
             ))}
+            {shownNew > 0 && (
+              <button
+                className="btn btn-sm"
+                style={{ background: '#052e16', color: '#4ade80', border: '1px solid #166534' }}
+                onClick={markAllRead}
+                disabled={markingAll}
+              >
+                {markingAll ? '⏳...' : `✅ Barchasini o'qildi (${shownNew})`}
+              </button>
+            )}
             <button
               className="btn btn-sm"
               style={{ background: '#2d3148', color: '#94a3b8' }}
               onClick={fetchMessages}
-            >
-              🔄
-            </button>
+            >🔄</button>
           </div>
         </div>
       </div>
@@ -84,10 +97,6 @@ export default function Support() {
           padding: 20, marginBottom: 20, color: '#fca5a5'
         }}>
           <div style={{ fontWeight: 700, marginBottom: 8 }}>❌ Jadval topilmadi!</div>
-          <div style={{ fontSize: 13, marginBottom: 12 }}>Xato: <code style={{ background: '#0f0f0f', padding: '2px 6px', borderRadius: 4 }}>{tableError}</code></div>
-          <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: 8 }}>
-            Supabase → SQL Editor'da quyidagini bajaring:
-          </div>
           <pre style={{
             background: '#0a0a0a', padding: 14, borderRadius: 8,
             fontSize: 12, color: '#86efac', overflow: 'auto', whiteSpace: 'pre-wrap'
@@ -100,11 +109,8 @@ export default function Support() {
   status TEXT DEFAULT 'new',
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
-
 ALTER TABLE support_messages ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "allow_service_role" ON support_messages
-  FOR ALL USING (true) WITH CHECK (true);`}</pre>
+CREATE POLICY "allow_service_role" ON support_messages FOR ALL USING (true) WITH CHECK (true);`}</pre>
         </div>
       )}
 
@@ -113,79 +119,58 @@ CREATE POLICY "allow_service_role" ON support_messages
       ) : !tableError && messages.length === 0 ? (
         <div className="card" style={{ padding: 40, textAlign: 'center', color: '#64748b' }}>
           <div style={{ fontSize: 48, marginBottom: 12 }}>📭</div>
-          <p style={{ marginBottom: 4 }}>Xabarlar yo'q</p>
-          <p style={{ fontSize: 13 }}>
-            Foydalanuvchi botda <b>"📨 Admin bilan bog'lanish"</b> tugmasini bosganda shu yerda ko'rinadi
-          </p>
+          <p>Xabarlar yo'q</p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {messages.map(msg => (
-            <div
-              key={msg.id}
-              className="card"
-              style={{
-                borderLeft: msg.status === 'new' ? '4px solid #ef4444' : '4px solid #22c55e',
-                padding: 20
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16 }}>
+            <div key={msg.id} className="card" style={{
+              borderLeft: `4px solid ${msg.status === 'new' ? '#ef4444' : '#334155'}`,
+              padding: 18
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
-                    <span style={{ fontWeight: 700, fontSize: 16 }}>
-                      {msg.first_name || 'Nomsiz'}
-                    </span>
-                    {msg.username && (
-                      <span style={{ color: '#60a5fa', fontSize: 13 }}>@{msg.username}</span>
-                    )}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
                     <span style={{
-                      background: msg.status === 'new' ? '#450a0a' : '#052e16',
-                      color: msg.status === 'new' ? '#fca5a5' : '#86efac',
-                      border: `1px solid ${msg.status === 'new' ? '#7f1d1d' : '#14532d'}`,
-                      borderRadius: 20, padding: '2px 10px', fontSize: 12
+                      background: msg.status === 'new' ? '#450a0a' : '#1e2236',
+                      color: msg.status === 'new' ? '#f87171' : '#64748b',
+                      padding: '2px 10px', borderRadius: 20, fontSize: 12
                     }}>
-                      {msg.status === 'new' ? '🔴 Yangi' : '✅ O\'qilgan'}
+                      {msg.status === 'new' ? '🔴 Yangi' : "✅ O'qilgan"}
                     </span>
-                  </div>
-                  <div style={{ color: '#64748b', fontSize: 13, marginBottom: 10 }}>
-                    🆔 {msg.telegram_id}
-                    {msg.created_at && (
-                      <> &nbsp;•&nbsp; 🕐 {new Date(msg.created_at).toLocaleString()}</>
+                    {msg.first_name && <span style={{ fontWeight: 600, fontSize: 14 }}>{msg.first_name}</span>}
+                    {msg.username && (
+                      <a href={`https://t.me/${msg.username}`} target="_blank" rel="noreferrer"
+                        style={{ color: '#60a5fa', fontSize: 13 }}>@{msg.username}</a>
                     )}
+                    <span style={{ color: '#64748b', fontSize: 12 }}>#{msg.telegram_id || '—'}</span>
+                    <span style={{ color: '#475569', fontSize: 11, marginLeft: 'auto' }}>
+                      {msg.created_at ? new Date(msg.created_at).toLocaleString() : ''}
+                    </span>
                   </div>
                   <div style={{
-                    background: '#1e2236', borderRadius: 8, padding: '12px 16px',
-                    fontSize: 15, lineHeight: 1.6, whiteSpace: 'pre-wrap', color: '#e2e8f0',
-                    wordBreak: 'break-word'
+                    fontSize: 15, lineHeight: 1.6, whiteSpace: 'pre-wrap',
+                    color: '#e2e8f0', wordBreak: 'break-word'
                   }}>
                     {msg.message}
                   </div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 }}>
                   {msg.status === 'new' && (
-                    <button
-                      className="btn btn-primary btn-sm"
-                      onClick={() => markRead(msg.id)}
-                    >
+                    <button className="btn btn-primary btn-sm" onClick={() => markRead(msg.id)}>
                       ✅ O'qildi
                     </button>
                   )}
                   {msg.username ? (
-                    <a
-                      href={`https://t.me/${msg.username}`}
-                      target="_blank"
-                      rel="noreferrer"
+                    <a href={`https://t.me/${msg.username}`} target="_blank" rel="noreferrer"
                       className="btn btn-sm"
-                      style={{ background: '#1a3a5c', color: '#60a5fa', textDecoration: 'none', textAlign: 'center' }}
-                    >
+                      style={{ background: '#1a3a5c', color: '#60a5fa', textDecoration: 'none', textAlign: 'center' }}>
                       💬 Javob
                     </a>
                   ) : msg.telegram_id ? (
-                    <a
-                      href={`tg://user?id=${msg.telegram_id}`}
+                    <a href={`tg://user?id=${msg.telegram_id}`}
                       className="btn btn-sm"
-                      style={{ background: '#1a3a5c', color: '#60a5fa', textDecoration: 'none', textAlign: 'center' }}
-                    >
+                      style={{ background: '#1a3a5c', color: '#60a5fa', textDecoration: 'none', textAlign: 'center' }}>
                       💬 Javob
                     </a>
                   ) : null}
@@ -193,9 +178,7 @@ CREATE POLICY "allow_service_role" ON support_messages
                     className="btn btn-sm"
                     style={{ background: '#450a0a', color: '#fca5a5', border: '1px solid #7f1d1d' }}
                     onClick={() => deleteMsg(msg.id)}
-                  >
-                    🗑️
-                  </button>
+                  >🗑️</button>
                 </div>
               </div>
             </div>
