@@ -3,65 +3,77 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# Detect schema: old (user_id, lang) vs new (telegram_id, language)
-def _detect_col():
+# Existing Supabase schema uses user_id and lang columns
+# After running migrate.sql, it will use telegram_id and language
+# Bot auto-detects which schema is active at startup
+
+_SCHEMA = {"id": "user_id", "lang": "lang"}
+
+
+def _init_schema():
+    global _SCHEMA
     try:
         res = supabase.table("users").select("telegram_id").limit(1).execute()
-        return "telegram_id", "language"
+        if isinstance(res.data, list):
+            _SCHEMA = {"id": "telegram_id", "lang": "language"}
+            logger.info("Schema: new (telegram_id, language)")
+        else:
+            _SCHEMA = {"id": "user_id", "lang": "lang"}
+            logger.info("Schema: old (user_id, lang)")
     except Exception:
-        return "user_id", "lang"
+        _SCHEMA = {"id": "user_id", "lang": "lang"}
+        logger.info("Schema: old (user_id, lang) [fallback]")
 
-_ID_COL, _LANG_COL = _detect_col()
-logger.info(f"Users table schema: id_col={_ID_COL}, lang_col={_LANG_COL}")
+
+def init():
+    _init_schema()
 
 
 def register_user(user_id: int, full_name: str, username: str, referral_from: int = None) -> str:
+    id_col = _SCHEMA["id"]
+    lang_col = _SCHEMA["lang"]
     try:
-        res = supabase.table("users").select(f"{_ID_COL},{_LANG_COL}").eq(_ID_COL, user_id).limit(1).execute()
+        res = supabase.table("users").select(f"{id_col},{lang_col}").eq(id_col, user_id).limit(1).execute()
         if res.data:
-            update_data = {}
-            if _ID_COL == "telegram_id":
-                update_data = {"full_name": full_name or "", "username": username or ""}
-            supabase.table("users").update(update_data or {_LANG_COL: res.data[0].get(_LANG_COL, "uz")}).eq(_ID_COL, user_id).execute()
-            return res.data[0].get(_LANG_COL, "uz")
-        else:
-            if _ID_COL == "telegram_id":
-                data = {
-                    "telegram_id": user_id,
-                    "full_name": full_name or "",
-                    "username": username or "",
-                    "language": "uz",
-                }
-            else:
-                data = {"user_id": user_id, "lang": "uz"}
-            supabase.table("users").insert(data).execute()
-            return "uz"
+            return res.data[0].get(lang_col, "uz") or "uz"
+        data = {id_col: user_id, lang_col: "uz"}
+        if id_col == "telegram_id":
+            data["full_name"] = full_name or ""
+            data["username"] = username or ""
+            data["is_premium"] = False
+        supabase.table("users").insert(data).execute()
+        return "uz"
     except Exception as e:
         logger.error(f"register_user error: {e}")
         return "uz"
 
 
 def get_user_language(user_id: int) -> str:
+    id_col = _SCHEMA["id"]
+    lang_col = _SCHEMA["lang"]
     try:
-        res = supabase.table("users").select(_LANG_COL).eq(_ID_COL, user_id).limit(1).execute()
+        res = supabase.table("users").select(lang_col).eq(id_col, user_id).limit(1).execute()
         if res.data:
-            return res.data[0].get(_LANG_COL, "uz")
+            return res.data[0].get(lang_col, "uz") or "uz"
         return "uz"
     except Exception:
         return "uz"
 
 
 def set_user_language(user_id: int, language: str):
+    id_col = _SCHEMA["id"]
+    lang_col = _SCHEMA["lang"]
     try:
-        supabase.table("users").update({_LANG_COL: language}).eq(_ID_COL, user_id).execute()
+        supabase.table("users").update({lang_col: language}).eq(id_col, user_id).execute()
     except Exception as e:
         logger.error(f"set_user_language error: {e}")
 
 
 def get_all_user_ids() -> list:
+    id_col = _SCHEMA["id"]
     try:
-        res = supabase.table("users").select(_ID_COL).execute()
-        return [row[_ID_COL] for row in (res.data or [])]
+        res = supabase.table("users").select(id_col).execute()
+        return [row[id_col] for row in (res.data or [])]
     except Exception as e:
         logger.error(f"get_all_user_ids error: {e}")
         return []
@@ -84,7 +96,8 @@ def get_stats() -> dict:
 
 
 def set_premium(user_id: int, value: bool = True):
+    id_col = _SCHEMA["id"]
     try:
-        supabase.table("users").update({"is_premium": value}).eq(_ID_COL, user_id).execute()
+        supabase.table("users").update({"is_premium": value}).eq(id_col, user_id).execute()
     except Exception as e:
         logger.error(f"set_premium error: {e}")
