@@ -23,7 +23,8 @@ TEXTS = {
             "  • Yoki kino nomini yozing\n\n"
             "⚙️ Buyruqlar:\n"
             "  /start — Botni qayta ishga tushirish\n"
-            "  /help — Yordam\n"
+            "  /til — Tilni o'zgartirish 🌐\n\n"
+            "📨 Savol yoki muammo bo'lsa — <b>Admin bilan bog'lanish</b> tugmasini bosing."
         ),
         "broadcast_usage": "❌ Format: /broadcast <xabar>",
         "broadcast_done": "✅ Xabar {count} ta foydalanuvchiga yuborildi.",
@@ -53,7 +54,8 @@ TEXTS = {
             "  • Или напишите название\n\n"
             "⚙️ Команды:\n"
             "  /start — Перезапустить бота\n"
-            "  /help — Помощь\n"
+            "  /til — Изменить язык 🌐\n\n"
+            "📨 Если есть вопросы — нажмите кнопку <b>Написать администратору</b>."
         ),
         "broadcast_usage": "❌ Формат: /broadcast <сообщение>",
         "broadcast_done": "✅ Сообщение отправлено {count} пользователям.",
@@ -83,7 +85,8 @@ TEXTS = {
             "  • Or type the movie name\n\n"
             "⚙️ Commands:\n"
             "  /start — Restart the bot\n"
-            "  /help — Help\n"
+            "  /til — Change language 🌐\n\n"
+            "📨 For questions — press the <b>Contact Admin</b> button."
         ),
         "broadcast_usage": "❌ Format: /broadcast <message>",
         "broadcast_done": "✅ Message sent to {count} users.",
