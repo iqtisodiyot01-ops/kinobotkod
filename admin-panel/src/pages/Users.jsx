@@ -4,67 +4,98 @@ import { supabase } from '../lib/supabase'
 export default function Users() {
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [search, setSearch] = useState('')
 
   useEffect(() => {
     async function load() {
-      const { data } = await supabase.from('users').select('*').order('created_at', { ascending: false })
-      setUsers(data || [])
+      setLoading(true)
+      setError(null)
+      const { data, error: err } = await supabase.from('users').select('*')
+      if (err) {
+        setError(err.message)
+      } else {
+        const sorted = (data || []).sort((a, b) => {
+          return (b.telegram_id || b.user_id || 0) - (a.telegram_id || a.user_id || 0)
+        })
+        setUsers(sorted)
+      }
       setLoading(false)
     }
     load()
   }, [])
 
-  const filtered = users.filter(u =>
-    String(u.user_id).includes(search) ||
-    u.username?.toLowerCase().includes(search.toLowerCase()) ||
-    u.full_name?.toLowerCase().includes(search.toLowerCase())
-  )
+  const getId = (u) => u.telegram_id || u.user_id || '—'
+  const getLang = (u) => u.language || u.lang || '—'
+
+  const filtered = users.filter(u => {
+    const id = String(getId(u))
+    const name = (u.full_name || '').toLowerCase()
+    const uname = (u.username || '').toLowerCase()
+    const s = search.toLowerCase()
+    return id.includes(s) || name.includes(s) || uname.includes(s)
+  })
 
   const langFlag = { uz: '🇺🇿', ru: '🇷🇺', en: '🇬🇧' }
 
   return (
-    <>
-      <div className="page-title">Foydalanuvchilar</div>
+    <div className="page">
+      <div className="page-header">
+        <h1>👥 Foydalanuvchilar</h1>
+      </div>
       <div className="card">
         <div className="card-header">
-          <span className="card-title">Barcha foydalanuvchilar ({filtered.length})</span>
+          <span className="card-title">Jami: {filtered.length} ta</span>
           <input
             className="form-input"
-            style={{ width: 220, padding: '7px 12px' }}
+            style={{ width: 220 }}
             placeholder="ID, username yoki ism..."
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
         </div>
-        {loading ? <div className="loading">Yuklanmoqda...</div> : (
+
+        {loading ? (
+          <div className="loading">Yuklanmoqda...</div>
+        ) : error ? (
+          <div style={{ padding: 20, color: '#ef4444' }}>
+            ❌ Xato: {error}<br />
+            <small>Vercel'da <b>VITE_SUPABASE_KEY</b> ni <b>service_role</b> key bilan almashtiring</small>
+          </div>
+        ) : (
           <table>
             <thead>
               <tr>
-                <th>User ID</th>
+                <th>Telegram ID</th>
                 <th>Ism</th>
                 <th>Username</th>
                 <th>Til</th>
-                <th>Ro'yxatdan o'tgan</th>
               </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 && <tr><td colSpan={5} className="empty">Foydalanuvchilar topilmadi</td></tr>}
-              {filtered.map(u => (
-                <tr key={u.user_id}>
-                  <td><span className="badge badge-blue">{u.user_id}</span></td>
-                  <td>{u.full_name || '—'}</td>
-                  <td style={{ color: '#64748b' }}>{u.username ? `@${u.username}` : '—'}</td>
-                  <td>{langFlag[u.language] || '🌐'} {u.language || '—'}</td>
-                  <td style={{ color: '#64748b', fontSize: 12 }}>
-                    {u.created_at ? new Date(u.created_at).toLocaleDateString('uz-UZ') : '—'}
-                  </td>
-                </tr>
-              ))}
+              {filtered.length === 0 && (
+                <tr><td colSpan={4} className="empty">Foydalanuvchilar topilmadi</td></tr>
+              )}
+              {filtered.map(u => {
+                const uid = getId(u)
+                const lang = getLang(u)
+                return (
+                  <tr key={uid}>
+                    <td><span className="badge badge-blue">{uid}</span></td>
+                    <td>{u.full_name || '—'}</td>
+                    <td style={{ color: '#64748b' }}>
+                      {u.username
+                        ? <a href={`https://t.me/${u.username}`} target="_blank" rel="noreferrer" style={{ color: '#60a5fa' }}>@{u.username}</a>
+                        : '—'}
+                    </td>
+                    <td>{langFlag[lang] || '🌐'} {lang}</td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         )}
       </div>
-    </>
+    </div>
   )
 }
