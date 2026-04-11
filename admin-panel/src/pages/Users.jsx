@@ -39,16 +39,14 @@ export default function Users() {
   const langFlag = { uz: '🇺🇿', ru: '🇷🇺', en: '🇬🇧' }
 
   return (
-    <div className="page">
-      <div className="page-header">
-        <h1>👥 Foydalanuvchilar</h1>
-      </div>
+    <>
+      <div className="page-title">👥 Foydalanuvchilar</div>
       <div className="card">
         <div className="card-header">
           <span className="card-title">Jami: {filtered.length} ta</span>
           <input
             className="form-input"
-            style={{ width: 220 }}
+            style={{ width: 200, padding: '7px 12px' }}
             placeholder="ID, username yoki ism..."
             value={search}
             onChange={e => setSearch(e.target.value)}
@@ -58,44 +56,46 @@ export default function Users() {
         {loading ? (
           <div className="loading">Yuklanmoqda...</div>
         ) : error ? (
-          <div style={{ padding: 20, color: '#ef4444' }}>
-            ❌ Xato: {error}<br />
-            <small>Vercel'da <b>VITE_SUPABASE_KEY</b> ni <b>service_role</b> key bilan almashtiring</small>
+          <div style={{ padding: 20, color: '#fca5a5', lineHeight: 1.8 }}>
+            ❌ Xato: <code style={{ fontSize: 12 }}>{error}</code><br />
+            <small style={{ color: '#94a3b8' }}>Vercel → <b>VITE_SUPABASE_KEY</b> = service_role key bo'lishi kerak</small>
           </div>
         ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>Telegram ID</th>
-                <th>Ism</th>
-                <th>Username</th>
-                <th>Til</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.length === 0 && (
-                <tr><td colSpan={4} className="empty">Foydalanuvchilar topilmadi</td></tr>
-              )}
-              {filtered.map(u => {
-                const uid = getId(u)
-                const lang = getLang(u)
-                return (
-                  <tr key={uid}>
-                    <td><span className="badge badge-blue">{uid}</span></td>
-                    <td>{u.full_name || '—'}</td>
-                    <td style={{ color: '#64748b' }}>
-                      {u.username
-                        ? <a href={`https://t.me/${u.username}`} target="_blank" rel="noreferrer" style={{ color: '#60a5fa' }}>@{u.username}</a>
-                        : '—'}
-                    </td>
-                    <td>{langFlag[lang] || '🌐'} {lang}</td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Telegram ID</th>
+                  <th>Ism</th>
+                  <th>Username</th>
+                  <th>Til</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.length === 0 && (
+                  <tr><td colSpan={4} className="empty">Foydalanuvchilar topilmadi</td></tr>
+                )}
+                {filtered.map(u => {
+                  const uid = getId(u)
+                  const lang = getLang(u)
+                  return (
+                    <tr key={uid}>
+                      <td><span className="badge badge-blue">{uid}</span></td>
+                      <td>{u.full_name || '—'}</td>
+                      <td style={{ color: '#64748b' }}>
+                        {u.username
+                          ? <a href={`https://t.me/${u.username}`} target="_blank" rel="noreferrer" style={{ color: '#60a5fa' }}>@{u.username}</a>
+                          : '—'}
+                      </td>
+                      <td>{langFlag[lang] || '🌐'} {lang}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
-    </div>
+    </>
   )
 }
