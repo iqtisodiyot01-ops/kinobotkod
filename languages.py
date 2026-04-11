@@ -1,126 +1,103 @@
 TEXTS = {
     "uz": {
-        "choose_lang": "🌐 Tilni tanlang / Выберите язык / Choose language:",
-        "welcome": (
-            "🎬 Assalomu alaykum, Kino olamiga xush kelibsiz!\n\n"
-            "Bu bot orqali siz istalgan kinoni nomi yoki kodi orqali tez va oson topasiz.\n"
-            "🍿 Shunchaki kino nomi yoki kodini yuboring — biz esa sizga uni tayyorlab beramiz!\n\n"
-            "🔎 Kino nomini yozing yoki shunchaki kino kodini kiriting:"
-        ),
-        "sub_required": (
-            "🔒 Iltimos, quyidagi kanallarimizga obuna bo'ling,\n"
-            "keyin botni ishlatishingiz mumkin."
-        ),
-        "sub_button": "📢 Obuna bo'lish",
-        "sub_done": "✅ Obuna bo'ldim",
-        "sub_check_fail": (
-            "❌ Siz hali barcha kanallarga obuna bo'lmagansiz!\n"
-            "Iltimos, obuna bo'lib, qayta urinib ko'ring."
-        ),
-        "sub_success": (
-            "✅ Rahmat! Endi botdan foydalanishingiz mumkin.\n\n"
-            "🔎 Kino nomini yozing yoki kino kodini kiriting:"
-        ),
-        "not_found": (
-            "😔 Bunday kino topilmadi. Boshqa kinoni izlab ko'ring.\n\n"
-            "💡 Hohlasangiz eng sara kinolar ro'yxatini telegram kanalimizdan ko'rishingiz mumkin."
-        ),
+        "choose_lang": "🌐 Tilni tanlang:",
+        "choose_language": "🌐 Tilni tanlang:",
+        "language_changed": "✅ Til o'zgartirildi: O'zbekcha 🇺🇿",
         "lang_changed": "✅ Til o'zgartirildi: O'zbekcha 🇺🇿",
-        "help": (
-            "🆘 Yordam bo'limi:\n\n"
-            "🔎 Kino topish:\n"
-            "  — Kino kodini yuboring (masalan: `101`)\n"
-            "  — Yoki kino nomini yozing\n\n"
+        "welcome": "🎬 Salom, {name}!\n\nKino kodini yoki nomini yuboring — biz tez topib beramiz! 🍿",
+        "subscribe_required": "🔒 Botdan foydalanish uchun quyidagi kanallarga obuna bo'ling:",
+        "sub_required": "🔒 Botdan foydalanish uchun quyidagi kanallarga obuna bo'ling:",
+        "not_subscribed_yet": "❌ Siz hali barcha kanallarga obuna bo'lmagansiz!",
+        "sub_check_fail": "❌ Siz hali barcha kanallarga obuna bo'lmagansiz!",
+        "sub_success": "✅ Rahmat! Endi botdan foydalanishingiz mumkin.",
+        "movie_not_found": "😔 Bunday kino topilmadi. Boshqa nom yoki kod bilan urinib ko'ring.",
+        "not_found": "😔 Bunday kino topilmadi. Boshqa nom yoki kod bilan urinib ko'ring.",
+        "search_results": "🔎 Qidiruv natijalari:\n\n{results}\n\nKodni yuboring!",
+        "search_btn": "🔍 Qidirish",
+        "help_btn": "❓ Yordam",
+        "language_btn": "🌐 Til",
+        "help_text": (
+            "🆘 <b>Yordam</b>\n\n"
+            "🎬 Kino topish uchun:\n"
+            "  • Kino kodini yuboring (masalan: <code>101</code>)\n"
+            "  • Yoki kino nomini yozing\n\n"
             "⚙️ Buyruqlar:\n"
             "  /start — Botni qayta ishga tushirish\n"
-            "  /lang — Tilni o'zgartirish\n"
             "  /help — Yordam\n"
         ),
-        "broadcast_usage": "❌ Format: `/broadcast <xabar matni>`",
+        "broadcast_usage": "❌ Format: /broadcast <xabar>",
         "broadcast_done": "✅ Xabar {count} ta foydalanuvchiga yuborildi.",
     },
     "ru": {
-        "choose_lang": "🌐 Tilni tanlang / Выберите язык / Choose language:",
-        "welcome": (
-            "🎬 Привет! Добро пожаловать в мир Кино!\n\n"
-            "С помощью этого бота вы можете легко найти любой фильм по названию или коду.\n"
-            "🍿 Просто отправьте название или код фильма — и мы подготовим его для вас!\n\n"
-            "🔎 Напишите название фильма или введите код:"
-        ),
-        "sub_required": (
-            "🔒 Пожалуйста, подпишитесь на наши каналы,\n"
-            "затем вы сможете пользоваться ботом."
-        ),
-        "sub_button": "📢 Подписаться",
-        "sub_done": "✅ Я подписался",
-        "sub_check_fail": (
-            "❌ Вы ещё не подписались на все каналы!\n"
-            "Пожалуйста, подпишитесь и попробуйте снова."
-        ),
-        "sub_success": (
-            "✅ Спасибо! Теперь вы можете пользоваться ботом.\n\n"
-            "🔎 Напишите название фильма или введите код:"
-        ),
-        "not_found": (
-            "😔 Такой фильм не найден. Попробуйте найти другой.\n\n"
-            "💡 Вы можете посмотреть список лучших фильмов в нашем Telegram-канале."
-        ),
+        "choose_lang": "🌐 Выберите язык:",
+        "choose_language": "🌐 Выберите язык:",
+        "language_changed": "✅ Язык изменён: Русский 🇷🇺",
         "lang_changed": "✅ Язык изменён: Русский 🇷🇺",
-        "help": (
-            "🆘 Помощь:\n\n"
-            "🔎 Поиск фильма:\n"
-            "  — Отправьте код фильма (например: `101`)\n"
-            "  — Или напишите название фильма\n\n"
+        "welcome": "🎬 Привет, {name}!\n\nОтправьте код или название фильма — найдём! 🍿",
+        "subscribe_required": "🔒 Чтобы использовать бота, подпишитесь на каналы:",
+        "sub_required": "🔒 Чтобы использовать бота, подпишитесь на каналы:",
+        "not_subscribed_yet": "❌ Вы ещё не подписались на все каналы!",
+        "sub_check_fail": "❌ Вы ещё не подписались на все каналы!",
+        "sub_success": "✅ Спасибо! Теперь вы можете пользоваться ботом.",
+        "movie_not_found": "😔 Фильм не найден. Попробуйте другое название или код.",
+        "not_found": "😔 Фильм не найден. Попробуйте другое название или код.",
+        "search_results": "🔎 Результаты поиска:\n\n{results}\n\nОтправьте код!",
+        "search_btn": "🔍 Поиск",
+        "help_btn": "❓ Помощь",
+        "language_btn": "🌐 Язык",
+        "help_text": (
+            "🆘 <b>Помощь</b>\n\n"
+            "🎬 Чтобы найти фильм:\n"
+            "  • Отправьте код фильма (например: <code>101</code>)\n"
+            "  • Или напишите название\n\n"
             "⚙️ Команды:\n"
             "  /start — Перезапустить бота\n"
-            "  /lang — Сменить язык\n"
             "  /help — Помощь\n"
         ),
-        "broadcast_usage": "❌ Формат: `/broadcast <текст сообщения>`",
+        "broadcast_usage": "❌ Формат: /broadcast <сообщение>",
         "broadcast_done": "✅ Сообщение отправлено {count} пользователям.",
     },
     "en": {
-        "choose_lang": "🌐 Tilni tanlang / Выберите язык / Choose language:",
-        "welcome": (
-            "🎬 Hello! Welcome to the Movie World!\n\n"
-            "With this bot you can easily find any movie by name or code.\n"
-            "🍿 Just send the movie name or code — and we will prepare it for you!\n\n"
-            "🔎 Write the movie name or enter the movie code:"
-        ),
-        "sub_required": (
-            "🔒 Please subscribe to our channels,\n"
-            "then you can use the bot."
-        ),
-        "sub_button": "📢 Subscribe",
-        "sub_done": "✅ I subscribed",
-        "sub_check_fail": (
-            "❌ You have not subscribed to all channels yet!\n"
-            "Please subscribe and try again."
-        ),
-        "sub_success": (
-            "✅ Thank you! Now you can use the bot.\n\n"
-            "🔎 Write the movie name or enter the movie code:"
-        ),
-        "not_found": (
-            "😔 This movie was not found. Try searching for another one.\n\n"
-            "💡 You can view the list of top movies in our Telegram channel."
-        ),
+        "choose_lang": "🌐 Choose language:",
+        "choose_language": "🌐 Choose language:",
+        "language_changed": "✅ Language changed: English 🇬🇧",
         "lang_changed": "✅ Language changed: English 🇬🇧",
-        "help": (
-            "🆘 Help:\n\n"
-            "🔎 Search a movie:\n"
-            "  — Send the movie code (e.g. `101`)\n"
-            "  — Or type the movie name\n\n"
+        "welcome": "🎬 Hello, {name}!\n\nSend a movie code or name — we'll find it! 🍿",
+        "subscribe_required": "🔒 Please subscribe to our channels to use the bot:",
+        "sub_required": "🔒 Please subscribe to our channels to use the bot:",
+        "not_subscribed_yet": "❌ You haven't subscribed to all channels yet!",
+        "sub_check_fail": "❌ You haven't subscribed to all channels yet!",
+        "sub_success": "✅ Thank you! Now you can use the bot.",
+        "movie_not_found": "😔 Movie not found. Try another name or code.",
+        "not_found": "😔 Movie not found. Try another name or code.",
+        "search_results": "🔎 Search results:\n\n{results}\n\nSend the code!",
+        "search_btn": "🔍 Search",
+        "help_btn": "❓ Help",
+        "language_btn": "🌐 Language",
+        "help_text": (
+            "🆘 <b>Help</b>\n\n"
+            "🎬 To find a movie:\n"
+            "  • Send a movie code (e.g. <code>101</code>)\n"
+            "  • Or type the movie name\n\n"
             "⚙️ Commands:\n"
             "  /start — Restart the bot\n"
-            "  /lang — Change language\n"
             "  /help — Help\n"
         ),
-        "broadcast_usage": "❌ Format: `/broadcast <message text>`",
+        "broadcast_usage": "❌ Format: /broadcast <message>",
         "broadcast_done": "✅ Message sent to {count} users.",
     },
 }
 
 
+def get_text(lang: str, key: str, **kwargs) -> str:
+    text = TEXTS.get(lang, TEXTS["uz"]).get(key) or TEXTS["uz"].get(key, f"[{key}]")
+    if kwargs:
+        try:
+            text = text.format(**kwargs)
+        except Exception:
+            pass
+    return text
+
+
 def t(lang: str, key: str) -> str:
-    return TEXTS.get(lang, TEXTS["uz"]).get(key, "")
+    return get_text(lang, key)
