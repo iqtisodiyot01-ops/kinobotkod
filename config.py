@@ -11,5 +11,5 @@ ADMIN_IDS = list(map(int, admin_ids_str.split(","))) if admin_ids_str else []
 CHANNELS = [c.strip() for c in os.getenv("CHANNELS", "").split(",") if c.strip()]
 MOVIE_CHANNEL = os.getenv("MOVIE_CHANNEL", "")
 
-SUPABASE_URL = os.getenv("SUPABASE_URL", "")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
+SUPABASE_URL = os.getenv("SUPABASE_URL", "").strip()
+SUPABASE_KEY = os.getenv("SUPABASE_KEY", "").strip()
