@@ -7,6 +7,7 @@ import Channels from './pages/Channels'
 import Users from './pages/Users'
 import Broadcast from './pages/Broadcast'
 import Payments from './pages/Payments'
+import Support from './pages/Support'
 import Sidebar from './components/Sidebar'
 
 function Layout({ children }) {
@@ -43,6 +44,7 @@ export default function App() {
           <Route path="/users" element={<Users />} />
           <Route path="/broadcast" element={<Broadcast />} />
           <Route path="/payments" element={<Payments />} />
+          <Route path="/support" element={<Support />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Layout>
