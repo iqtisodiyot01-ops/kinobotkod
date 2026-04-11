@@ -70,6 +70,65 @@ def register_user(user_id: int, full_name: str, username: str,
         return "uz"
 
 
+def check_premium(user_id: int) -> bool:
+    id_col = _SCHEMA["id"]
+    try:
+        res = supabase.table("users").select("is_premium").eq(id_col, user_id).limit(1).execute()
+        if res.data:
+            return bool(res.data[0].get("is_premium", False))
+        return False
+    except Exception:
+        return False
+
+
+def get_user_credits(user_id: int) -> int:
+    id_col = _SCHEMA["id"]
+    try:
+        res = supabase.table("users").select("credits").eq(id_col, user_id).limit(1).execute()
+        if res.data:
+            return int(res.data[0].get("credits", 0) or 0)
+        return 0
+    except Exception:
+        return 0
+
+
+def add_credits(user_id: int, amount: int = 1):
+    id_col = _SCHEMA["id"]
+    try:
+        current = get_user_credits(user_id)
+        supabase.table("users").update({"credits": current + amount}).eq(id_col, user_id).execute()
+    except Exception as e:
+        logger.error(f"add_credits error: {e}")
+
+
+def use_credit(user_id: int) -> bool:
+    id_col = _SCHEMA["id"]
+    try:
+        current = get_user_credits(user_id)
+        if current > 0:
+            supabase.table("users").update({"credits": current - 1}).eq(id_col, user_id).execute()
+            return True
+        return False
+    except Exception as e:
+        logger.error(f"use_credit error: {e}")
+        return False
+
+
+def register_referral(referrer_id: int, referred_id: int):
+    try:
+        existing = supabase.table("referrals").select("id").eq("referred_id", referred_id).limit(1).execute()
+        if existing.data:
+            return
+        supabase.table("referrals").insert({
+            "referrer_id": referrer_id,
+            "referred_id": referred_id,
+        }).execute()
+        add_credits(referrer_id, 1)
+        logger.info(f"Referral: {referred_id} joined via {referrer_id} — credit added")
+    except Exception as e:
+        logger.error(f"register_referral error: {e}")
+
+
 def get_user_language(user_id: int) -> str:
     id_col = _SCHEMA["id"]
     lang_col = _SCHEMA["lang"]
