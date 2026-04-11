@@ -11,9 +11,11 @@ router = Router()
 async def handle_text(message: Message, bot: Bot, lang: str):
     text = message.text.strip()
 
-    if text in ["🔍 Qidirish", "🔍 Поиск", "🔍 Search",
-                "🌐 Til", "🌐 Язык", "🌐 Language",
-                "❓ Yordam", "❓ Помощь", "❓ Help"]:
+    menu_btns = [
+        "❓ Yordam", "❓ Помощь", "❓ Help",
+        "📨 Admin bilan bog'lanish", "📨 Написать администратору", "📨 Contact Admin",
+    ]
+    if text in menu_btns:
         return
 
     not_subbed = await check_subscription(bot, message.from_user.id)
