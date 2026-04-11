@@ -1,1 +1,1 @@
-from . import start, movies, admin
+from . import start, movies, admin, support
