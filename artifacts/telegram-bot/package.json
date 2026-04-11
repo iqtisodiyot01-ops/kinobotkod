@@ -1,0 +1,16 @@
+{
+  "name": "@workspace/telegram-bot",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch bot.mjs",
+    "start": "node bot.mjs",
+    "build": "echo 'No build step needed'"
+  },
+  "dependencies": {
+    "node-telegram-bot-api": "^0.66.0",
+    "dotenv": "^16.4.7",
+    "pg": "^8.14.1"
+  }
+}
