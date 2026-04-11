@@ -81,6 +81,14 @@ def check_premium(user_id: int) -> bool:
         return False
 
 
+def set_premium(user_id: int, value: bool = True):
+    id_col = _SCHEMA["id"]
+    try:
+        supabase.table("users").update({"is_premium": value}).eq(id_col, user_id).execute()
+    except Exception as e:
+        logger.error(f"set_premium error: {e}")
+
+
 def get_user_credits(user_id: int) -> int:
     id_col = _SCHEMA["id"]
     try:
@@ -114,19 +122,23 @@ def use_credit(user_id: int) -> bool:
         return False
 
 
-def register_referral(referrer_id: int, referred_id: int):
+def register_referral(referrer_id: int, referred_id: int) -> int:
+    """Returns new credit count for referrer (0 if already registered or error)."""
     try:
         existing = supabase.table("referrals").select("id").eq("referred_id", referred_id).limit(1).execute()
         if existing.data:
-            return
+            return 0
         supabase.table("referrals").insert({
             "referrer_id": referrer_id,
             "referred_id": referred_id,
         }).execute()
         add_credits(referrer_id, 1)
-        logger.info(f"Referral: {referred_id} joined via {referrer_id} — credit added")
+        new_credits = get_user_credits(referrer_id)
+        logger.info(f"Referral: {referred_id} joined via {referrer_id} — credit added, total={new_credits}")
+        return new_credits
     except Exception as e:
         logger.error(f"register_referral error: {e}")
+        return 0
 
 
 def get_user_language(user_id: int) -> str:
