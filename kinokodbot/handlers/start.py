@@ -2,13 +2,15 @@ import os
 from aiogram import Router, F, Bot
 from aiogram.filters import CommandStart, Command
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
-from database.users import set_user_language, register_referral, get_user_credits
+from database.users import set_user_language, register_referral, get_user_credits, check_premium
 from services.subscription import check_subscription, get_subscription_keyboard
 from languages import get_text
+from config import BOT_USERNAME, MOVIE_CHANNEL
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = Router()
-
-BOT_USERNAME = os.getenv("BOT_USERNAME", "")
 
 LANG_KB = InlineKeyboardMarkup(inline_keyboard=[
     [
@@ -18,15 +20,40 @@ LANG_KB = InlineKeyboardMarkup(inline_keyboard=[
     ]
 ])
 
+_STATUS_LABELS = {"uz": "✅ Premium", "ru": "✅ Премиум", "en": "✅ Premium"}
+_FREE_LABELS   = {"uz": "❌ Oddiy",   "ru": "❌ Обычный", "en": "❌ Regular"}
+
 
 def main_menu(lang: str) -> ReplyKeyboardMarkup:
-    return ReplyKeyboardMarkup(
-        keyboard=[
-            [KeyboardButton(text=get_text(lang, "help_btn"))],
-            [KeyboardButton(text=get_text(lang, "support_btn"))],
+    btns = {
+        "uz": [
+            [KeyboardButton(text="❓ Yordam"), KeyboardButton(text="📨 Admin bilan bog'lanish")],
+            [KeyboardButton(text="📊 Statusim"), KeyboardButton(text="🎟 Referral kreditim")],
+            [KeyboardButton(text="💳 To'lov"), KeyboardButton(text="ℹ️ Bot haqida")],
         ],
-        resize_keyboard=True,
-    )
+        "ru": [
+            [KeyboardButton(text="❓ Помощь"), KeyboardButton(text="📨 Написать администратору")],
+            [KeyboardButton(text="📊 Мой статус"), KeyboardButton(text="🎟 Реф. кредиты")],
+            [KeyboardButton(text="💳 Оплата"), KeyboardButton(text="ℹ️ О боте")],
+        ],
+        "en": [
+            [KeyboardButton(text="❓ Help"), KeyboardButton(text="📨 Contact Admin")],
+            [KeyboardButton(text="📊 My Status"), KeyboardButton(text="🎟 My Credits")],
+            [KeyboardButton(text="💳 Payment"), KeyboardButton(text="ℹ️ About Bot")],
+        ],
+    }
+    return ReplyKeyboardMarkup(keyboard=btns.get(lang, btns["uz"]), resize_keyboard=True)
+
+
+def _ref_link(user_id: int) -> str:
+    username = BOT_USERNAME
+    if username:
+        return f"https://t.me/{username}?start=ref_{user_id}"
+    return f"https://t.me/bot?start=ref_{user_id}"
+
+
+def _movie_channel() -> str:
+    return MOVIE_CHANNEL or "@kinokod"
 
 
 @router.message(CommandStart())
@@ -39,9 +66,26 @@ async def cmd_start(message: Message, bot: Bot, lang: str):
             try:
                 referrer_id = int(arg[4:])
                 if referrer_id != message.from_user.id:
-                    register_referral(referrer_id, message.from_user.id)
-            except (ValueError, Exception):
-                pass
+                    new_credits = register_referral(referrer_id, message.from_user.id)
+                    if new_credits > 0:
+                        referrer_lang = lang
+                        try:
+                            from database.users import get_user_language
+                            referrer_lang = get_user_language(referrer_id) or "uz"
+                        except Exception:
+                            pass
+                        notify_text = get_text(
+                            referrer_lang, "referral_join_notify",
+                            name=message.from_user.full_name or message.from_user.first_name or "Foydalanuvchi",
+                            credits=new_credits,
+                            movie_channel=_movie_channel(),
+                        )
+                        try:
+                            await bot.send_message(referrer_id, notify_text, parse_mode="HTML")
+                        except Exception as e:
+                            logger.warning(f"Could not notify referrer {referrer_id}: {e}")
+            except (ValueError, Exception) as e:
+                logger.warning(f"Referral parse error: {e}")
 
     not_subbed = await check_subscription(bot, message.from_user.id)
     if not_subbed:
@@ -58,36 +102,36 @@ async def cmd_start(message: Message, bot: Bot, lang: str):
 
 
 @router.message(Command("referral", "ref"))
+@router.message(F.text.in_(["🎟 Referral kreditim", "🎟 Реф. кредиты", "🎟 My Credits"]))
 async def referral_command(message: Message, lang: str):
     user_id = message.from_user.id
     credits = get_user_credits(user_id)
+    link = _ref_link(user_id)
+    await message.answer(
+        get_text(lang, "credits_text", credits=credits, link=link),
+        parse_mode="HTML"
+    )
 
-    if BOT_USERNAME:
-        link = f"https://t.me/{BOT_USERNAME}?start=ref_{user_id}"
-    else:
-        link = f"https://t.me/bot?start=ref_{user_id}"
 
-    ref_msgs = {
-        "uz": (
-            f"🔗 <b>Sizning referral linkingiz:</b>\n\n"
-            f"<code>{link}</code>\n\n"
-            f"👥 Do'stingiz shu link orqali botga kirsa, siz <b>1 ta pulli kinoni bepul</b> ko'ra olasiz!\n\n"
-            f"🎟 Hozirgi kreditlaringiz: <b>{credits} ta</b>"
-        ),
-        "ru": (
-            f"🔗 <b>Ваша реферальная ссылка:</b>\n\n"
-            f"<code>{link}</code>\n\n"
-            f"👥 Когда друг зайдёт по этой ссылке, вы получите <b>1 бесплатный просмотр</b> платного фильма!\n\n"
-            f"🎟 Текущие кредиты: <b>{credits}</b>"
-        ),
-        "en": (
-            f"🔗 <b>Your referral link:</b>\n\n"
-            f"<code>{link}</code>\n\n"
-            f"👥 When a friend joins via this link, you get <b>1 free paid movie view</b>!\n\n"
-            f"🎟 Current credits: <b>{credits}</b>"
-        ),
-    }
-    await message.answer(ref_msgs.get(lang, ref_msgs["uz"]), parse_mode="HTML")
+@router.message(F.text.in_(["📊 Statusim", "📊 Мой статус", "📊 My Status"]))
+async def status_handler(message: Message, lang: str):
+    user_id = message.from_user.id
+    is_premium = check_premium(user_id)
+    credits = get_user_credits(user_id)
+    premium_label = _STATUS_LABELS.get(lang, "✅ Premium") if is_premium else _FREE_LABELS.get(lang, "❌ Oddiy")
+    await message.answer(
+        get_text(lang, "status_text",
+                 name=message.from_user.full_name or "—",
+                 uid=user_id,
+                 premium=premium_label,
+                 credits=credits),
+        parse_mode="HTML"
+    )
+
+
+@router.message(F.text.in_(["ℹ️ Bot haqida", "ℹ️ О боте", "ℹ️ About Bot"]))
+async def about_handler(message: Message, lang: str):
+    await message.answer(get_text(lang, "about_text"), parse_mode="HTML")
 
 
 @router.callback_query(F.data == "check_sub")
