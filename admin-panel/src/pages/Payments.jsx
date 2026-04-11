@@ -11,8 +11,9 @@ export default function Payments() {
 
   const load = async () => {
     setLoading(true)
-    const { data } = await supabase.from('payments').select('*, users(full_name, username)').order('created_at', { ascending: false }).limit(50)
-    const rows = data || []
+    const { data, error: err } = await supabase.from('payments').select('*').limit(50)
+    if (err) console.error('Payments error:', err.message)
+    const rows = (data || []).sort((a, b) => b.id - a.id)
     setPayments(rows)
     const success = rows.filter(p => p.status === 'success')
     setStats({
@@ -73,10 +74,10 @@ export default function Payments() {
           <button className="btn btn-primary btn-sm" onClick={() => setShowAdd(true)}>+ Premium berish</button>
         </div>
         {loading ? <div className="loading">Yuklanmoqda...</div> : (
-          <table>
+          <div className="table-wrap"><table>
             <thead>
               <tr>
-                <th>Foydalanuvchi</th>
+                <th>User ID</th>
                 <th>Summa</th>
                 <th>Provider</th>
                 <th>Holat</th>
@@ -88,17 +89,18 @@ export default function Payments() {
               {payments.map(p => (
                 <tr key={p.id}>
                   <td>
-                    <div>{p.users?.full_name || p.user_id}</div>
-                    {p.users?.username && <div style={{ color: '#64748b', fontSize: 12 }}>@{p.users.username}</div>}
+                    <span className="badge badge-blue">{p.user_id || p.telegram_id || '—'}</span>
                   </td>
-                  <td><b>{(p.amount || 0).toLocaleString()}</b> {p.currency}</td>
-                  <td><span className="badge badge-blue">{p.provider}</span></td>
+                  <td><b>{(p.amount || 0).toLocaleString()}</b> {p.currency || 'UZS'}</td>
+                  <td><span className="badge badge-blue">{p.provider || '—'}</span></td>
                   <td>{statusBadge(p.status)}</td>
-                  <td style={{ color: '#64748b', fontSize: 12 }}>{p.created_at ? new Date(p.created_at).toLocaleDateString() : '—'}</td>
+                  <td style={{ color: '#64748b', fontSize: 12 }}>
+                    {p.created_at ? new Date(p.created_at).toLocaleDateString() : '—'}
+                  </td>
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         )}
       </div>
 
