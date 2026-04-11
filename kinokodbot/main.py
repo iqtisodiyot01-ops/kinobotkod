@@ -5,7 +5,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from config import BOT_TOKEN
 import database.users as users_db
 from middlewares.user import UserMiddleware
-from handlers import start, movies, admin, support, getid
+from handlers import start, movies, admin, support
 
 logging.basicConfig(
     level=logging.INFO,
@@ -24,7 +24,6 @@ async def main():
 
     dp.include_router(admin.router)
     dp.include_router(support.router)
-    dp.include_router(getid.router)
     dp.include_router(start.router)
     dp.include_router(movies.router)
 
