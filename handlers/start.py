@@ -21,6 +21,7 @@ def main_menu(lang: str) -> ReplyKeyboardMarkup:
         keyboard=[
             [KeyboardButton(text=get_text(lang, "search_btn"))],
             [KeyboardButton(text=get_text(lang, "help_btn")), KeyboardButton(text=get_text(lang, "language_btn"))],
+            [KeyboardButton(text=get_text(lang, "support_btn"))],
         ],
         resize_keyboard=True,
     )
