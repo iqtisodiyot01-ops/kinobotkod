@@ -2,6 +2,21 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 
 const BOT_USERNAME = import.meta.env.VITE_BOT_USERNAME || ''
+const MOVIE_CHANNEL = import.meta.env.VITE_MOVIE_CHANNEL || '@kinokod'
+
+async function sendBotMessage(uid, text) {
+  const token = localStorage.getItem('kk_bot_token')
+  if (!token || !uid) return
+  try {
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: uid, text, parse_mode: 'HTML' })
+    })
+  } catch (e) {
+    console.warn('Telegram notify failed:', e)
+  }
+}
 
 export default function Users() {
   const [users, setUsers] = useState([])
@@ -61,6 +76,15 @@ export default function Users() {
     await supabase.from('users').update({ is_premium: isPremium }).eq(idCol, uid)
     setSelected(prev => ({ ...prev, is_premium: isPremium }))
     setUsers(prev => prev.map(u => (u.telegram_id || u.user_id) === uid ? { ...u, is_premium: isPremium } : u))
+    if (isPremium) {
+      const name = selected.full_name || selected.username || 'Foydalanuvchi'
+      await sendBotMessage(uid,
+        `🎉 <b>Tabriklaymiz, ${name}!</b>\n\n` +
+        `💎 Sizga <b>PREMIUM</b> berildi!\n\n` +
+        `Endi barcha pulli va bepul kinolarni erkin ko'rishingiz mumkin 🎬\n` +
+        `Kino kodini yuboring yoki kanalimizdan tanlab ko'ring:\n${MOVIE_CHANNEL}`
+      )
+    }
     setSaving(false)
   }
 
