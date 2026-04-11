@@ -191,7 +191,7 @@ export default function Broadcast() {
           <button
             className="btn btn-primary"
             onClick={startBroadcast}
-            disabled={sending || (!text.trim() && !imageUrl.trim() && !videoFileId.trim()) || !botToken.trim()}
+            disabled={sending || (!text.trim() && !imageUrl.trim() && !videoFileId.trim()) || (!botToken.trim() && !import.meta.env.VITE_BOT_TOKEN)}
           >
             {sending ? '⏳ Yuborilmoqda...' : '📡 Yuborish'}
           </button>
