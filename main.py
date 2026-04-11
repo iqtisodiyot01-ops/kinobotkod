@@ -3,6 +3,7 @@ import logging
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 from config import BOT_TOKEN
+import database.users as users_db
 from middlewares.user import UserMiddleware
 from handlers import start, movies, admin
 
@@ -14,6 +15,8 @@ logger = logging.getLogger(__name__)
 
 
 async def main():
+    users_db.init()
+
     bot = Bot(token=BOT_TOKEN)
     dp = Dispatcher(storage=MemoryStorage())
 
