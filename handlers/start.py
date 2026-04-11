@@ -1,5 +1,5 @@
 from aiogram import Router, F, Bot
-from aiogram.filters import CommandStart
+from aiogram.filters import CommandStart, Command
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 from database.users import set_user_language
 from services.subscription import check_subscription, get_subscription_keyboard
@@ -19,8 +19,7 @@ LANG_KB = InlineKeyboardMarkup(inline_keyboard=[
 def main_menu(lang: str) -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text=get_text(lang, "search_btn"))],
-            [KeyboardButton(text=get_text(lang, "help_btn")), KeyboardButton(text=get_text(lang, "language_btn"))],
+            [KeyboardButton(text=get_text(lang, "help_btn"))],
             [KeyboardButton(text=get_text(lang, "support_btn"))],
         ],
         resize_keyboard=True,
@@ -29,14 +28,6 @@ def main_menu(lang: str) -> ReplyKeyboardMarkup:
 
 @router.message(CommandStart())
 async def cmd_start(message: Message, bot: Bot, lang: str, command=None):
-    args = message.text.split()[1] if len(message.text.split()) > 1 else None
-    referral_from = None
-    if args and args.startswith("ref_"):
-        try:
-            referral_from = int(args[4:])
-        except ValueError:
-            pass
-
     not_subbed = await check_subscription(bot, message.from_user.id)
     if not_subbed:
         await message.answer(
@@ -68,8 +59,13 @@ async def check_sub_callback(call: CallbackQuery, bot: Bot, lang: str):
             await call.message.delete()
         except Exception:
             pass
+        send_movie_hint = {
+            "uz": "✅ Obuna tasdiqlandi!\n\nEndi kino kodi yoki nomini yuboring 🎬",
+            "ru": "✅ Подписка подтверждена!\n\nТеперь отправьте код или название фильма 🎬",
+            "en": "✅ Subscription confirmed!\n\nNow send a movie code or name 🎬",
+        }
         await call.message.answer(
-            get_text(lang, "welcome").format(name=call.from_user.first_name),
+            send_movie_hint.get(lang, send_movie_hint["uz"]),
             reply_markup=main_menu(lang)
         )
 
@@ -78,18 +74,21 @@ async def check_sub_callback(call: CallbackQuery, bot: Bot, lang: str):
 async def select_language(call: CallbackQuery, lang: str):
     new_lang = call.data.split("_")[1]
     set_user_language(call.from_user.id, new_lang)
-    await call.message.delete()
+    try:
+        await call.message.delete()
+    except Exception:
+        pass
     await call.message.answer(
         get_text(new_lang, "language_changed"),
         reply_markup=main_menu(new_lang)
     )
 
 
-@router.message(F.text.in_(["🌐 Til", "🌐 Язык", "🌐 Language"]))
-async def change_language(message: Message, lang: str):
+@router.message(Command("til", "lang", "language", "settings"))
+async def settings_command(message: Message, lang: str):
     await message.answer(get_text(lang, "choose_language"), reply_markup=LANG_KB)
 
 
 @router.message(F.text.in_(["❓ Yordam", "❓ Помощь", "❓ Help"]))
 async def help_handler(message: Message, lang: str):
-    await message.answer(get_text(lang, "help_text"))
+    await message.answer(get_text(lang, "help_text"), parse_mode="HTML", reply_markup=main_menu(lang))
