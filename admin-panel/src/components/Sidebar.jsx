@@ -10,7 +10,7 @@ const items = [
   { icon: '📨', label: 'Xabarlar', path: '/support' },
 ]
 
-export default function Sidebar() {
+export default function Sidebar({ open, onClose }) {
   const nav = useNavigate()
   const loc = useLocation()
 
@@ -19,24 +19,35 @@ export default function Sidebar() {
     window.location.reload()
   }
 
+  const go = (path) => {
+    nav(path)
+    onClose?.()
+  }
+
   return (
-    <aside className="sidebar">
-      <div className="sidebar-logo">🎬 Kino<span>Kod</span></div>
-      <nav className="sidebar-nav">
-        {items.map(item => (
-          <div
-            key={item.path}
-            className={`nav-item ${loc.pathname === item.path ? 'active' : ''}`}
-            onClick={() => nav(item.path)}
-          >
-            <span className="nav-icon">{item.icon}</span>
-            {item.label}
-          </div>
-        ))}
-      </nav>
-      <div className="sidebar-footer">
-        <button className="logout-btn" onClick={logout}>🚪 Chiqish</button>
-      </div>
-    </aside>
+    <>
+      <div className={`sidebar-overlay ${open ? 'open' : ''}`} onClick={onClose} />
+      <aside className={`sidebar ${open ? 'open' : ''}`}>
+        <div className="sidebar-logo">
+          <span>🎬 Kino<span>Kod</span></span>
+          <button className="sidebar-close" onClick={onClose}>✕</button>
+        </div>
+        <nav className="sidebar-nav">
+          {items.map(item => (
+            <div
+              key={item.path}
+              className={`nav-item ${loc.pathname === item.path ? 'active' : ''}`}
+              onClick={() => go(item.path)}
+            >
+              <span className="nav-icon">{item.icon}</span>
+              {item.label}
+            </div>
+          ))}
+        </nav>
+        <div className="sidebar-footer">
+          <button className="logout-btn" onClick={logout}>🚪 Chiqish</button>
+        </div>
+      </aside>
+    </>
   )
 }
