@@ -3,10 +3,19 @@ import { supabase } from '../lib/supabase'
 
 export default function Support() {
   const [messages, setMessages] = useState([])
+  const [globalNewCount, setGlobalNewCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
   const [tableError, setTableError] = useState(null)
   const [markingAll, setMarkingAll] = useState(false)
+
+  const fetchGlobalNew = async () => {
+    const { count } = await supabase
+      .from('support_messages')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'new')
+    setGlobalNewCount(count || 0)
+  }
 
   const fetchMessages = async () => {
     setLoading(true)
@@ -21,6 +30,7 @@ export default function Support() {
       setMessages((data || []).sort((a, b) => b.id - a.id))
     }
     setLoading(false)
+    fetchGlobalNew()
   }
 
   useEffect(() => { fetchMessages() }, [filter])
@@ -43,18 +53,15 @@ export default function Support() {
     fetchMessages()
   }
 
-  const totalNew = messages.filter(m => m.status === 'new').length
-  const shownNew = filter === 'new' ? messages.length : filter === 'all' ? totalNew : 0
-
   return (
     <>
       <div className="page-title">
         📨 Foydalanuvchi Xabarlari
-        {totalNew > 0 && (
+        {globalNewCount > 0 && (
           <span style={{
             marginLeft: 10, background: '#ef4444', color: '#fff',
             borderRadius: 20, padding: '2px 10px', fontSize: 14, fontWeight: 600
-          }}>{totalNew} yangi</span>
+          }}>{globalNewCount} yangi</span>
         )}
       </div>
 
@@ -72,14 +79,14 @@ export default function Support() {
                 {f === 'all' ? 'Barchasi' : f === 'new' ? '🔴 Yangi' : "✅ O'qilgan"}
               </button>
             ))}
-            {shownNew > 0 && (
+            {globalNewCount > 0 && (
               <button
                 className="btn btn-sm"
                 style={{ background: '#052e16', color: '#4ade80', border: '1px solid #166534' }}
                 onClick={markAllRead}
                 disabled={markingAll}
               >
-                {markingAll ? '⏳...' : `✅ Barchasini o'qildi (${shownNew})`}
+                {markingAll ? '⏳...' : `✅ Barchasini o'qildi (${globalNewCount})`}
               </button>
             )}
             <button
