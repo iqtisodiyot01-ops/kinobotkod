@@ -15,6 +15,10 @@ async def handle_text(message: Message, bot: Bot, lang: str):
     menu_btns = [
         "❓ Yordam", "❓ Помощь", "❓ Help",
         "📨 Admin bilan bog'lanish", "📨 Написать администратору", "📨 Contact Admin",
+        "📊 Statusim", "📊 Мой статус", "📊 My Status",
+        "🎟 Referral kreditim", "🎟 Реф. кредиты", "🎟 My Credits",
+        "💳 To'lov", "💳 Оплата", "💳 Payment",
+        "ℹ️ Bot haqida", "ℹ️ О боте", "ℹ️ About Bot",
     ]
     if text in menu_btns:
         return
