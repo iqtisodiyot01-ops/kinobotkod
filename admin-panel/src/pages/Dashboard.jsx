@@ -5,7 +5,7 @@ export default function Dashboard() {
   const [stats, setStats] = useState({
     movies: 0, users: 0, channels: 0, support: 0,
     premium: 0, todayUsers: 0, todayMovies: 0,
-    paidMovies: 0,
+    paidMovies: 0, activeUsers: 0, inactiveUsers: 0,
   })
   const [recent, setRecent] = useState([])
   const [broadcasts, setBroadcasts] = useState([])
@@ -21,7 +21,7 @@ export default function Dashboard() {
         today.setHours(0, 0, 0, 0)
         const todayISO = today.toISOString()
 
-        const [m, u, c, sm, rm, prem, tUsers, tMovies, pMovies, bcast] = await Promise.all([
+        const [m, u, c, sm, rm, prem, tUsers, tMovies, pMovies, bcast, activeU, inactiveU] = await Promise.all([
           supabase.from('movies').select('*', { count: 'exact', head: true }),
           supabase.from('users').select('*', { count: 'exact', head: true }),
           supabase.from('channels').select('*', { count: 'exact', head: true }),
@@ -32,6 +32,8 @@ export default function Dashboard() {
           supabase.from('movies').select('*', { count: 'exact', head: true }).gte('created_at', todayISO),
           supabase.from('movies').select('*', { count: 'exact', head: true }).eq('is_paid', true),
           supabase.from('broadcasts').select('id,message,sent_count,status,created_at').limit(5),
+          supabase.from('users').select('*', { count: 'exact', head: true }).not('full_name', 'is', null).neq('full_name', ''),
+          supabase.from('users').select('*', { count: 'exact', head: true }).or('full_name.is.null,full_name.eq.'),
         ])
 
         if (m.error) throw new Error('Supabase: ' + m.error.message)
@@ -45,6 +47,8 @@ export default function Dashboard() {
           todayUsers: tUsers.count || 0,
           todayMovies: tMovies.count || 0,
           paidMovies: pMovies.count || 0,
+          activeUsers: activeU.count || 0,
+          inactiveUsers: inactiveU.count || 0,
         })
         setRecent((rm.data || []).slice(0, 8))
         setBroadcasts((bcast.data || []).sort((a, b) => b.id - a.id).slice(0, 5))
@@ -105,6 +109,16 @@ export default function Dashboard() {
         <StatCard icon="🎞️" label="Bugun qo'shilgan" value={stats.todayMovies} sub="kino" color="#60a5fa" />
         <StatCard icon="💎" label="Premium" value={stats.premium} sub={`${stats.users ? Math.round(stats.premium / stats.users * 100) : 0}% foydalanuvchi`} color="#f59e0b" />
         <StatCard icon="💳" label="Pulli kinolar" value={stats.paidMovies} color="#a78bfa" />
+      </div>
+
+      <div style={{ marginBottom: 8, fontWeight: 600, color: '#94a3b8', fontSize: 12, textTransform: 'uppercase', letterSpacing: 1 }}>
+        FAOL / NOFAOL FOYDALANUVCHILAR
+      </div>
+      <div className="stats-grid" style={{ marginBottom: 24 }}>
+        <StatCard icon="✅" label="Faol foydalanuvchilar" value={stats.activeUsers} sub="ismi bor (yangi bot versiyasi)" color="#22c55e" />
+        <StatCard icon="⏸️" label="Nofaol foydalanuvchilar" value={stats.inactiveUsers} sub="ismi yo'q (eski foydalanuvchilar)" color="#64748b" />
+        <StatCard icon="🆓" label="Oddiy (bepul)" value={stats.users - stats.premium} sub="premium emas" />
+        <StatCard icon="📊" label="Kanallar" value={stats.channels} />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20 }}>
