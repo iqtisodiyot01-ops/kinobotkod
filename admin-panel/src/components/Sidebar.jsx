@@ -7,6 +7,7 @@ const items = [
   { icon: '👥', label: 'Foydalanuvchilar', path: '/users' },
   { icon: '📡', label: 'Broadcast', path: '/broadcast' },
   { icon: '💳', label: "To'lovlar", path: '/payments' },
+  { icon: '📨', label: 'Xabarlar', path: '/support' },
 ]
 
 export default function Sidebar() {
