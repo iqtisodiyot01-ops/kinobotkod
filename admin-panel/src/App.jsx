@@ -1,10 +1,12 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Movies from './pages/Movies'
 import Channels from './pages/Channels'
 import Users from './pages/Users'
+import Broadcast from './pages/Broadcast'
+import Payments from './pages/Payments'
 import Sidebar from './components/Sidebar'
 
 function Layout({ children }) {
@@ -29,11 +31,6 @@ export default function App() {
     return false
   }
 
-  const logout = () => {
-    localStorage.removeItem('kk_auth')
-    setAuth(false)
-  }
-
   if (!auth) return <Login onLogin={login} />
 
   return (
@@ -44,6 +41,8 @@ export default function App() {
           <Route path="/movies" element={<Movies />} />
           <Route path="/channels" element={<Channels />} />
           <Route path="/users" element={<Users />} />
+          <Route path="/broadcast" element={<Broadcast />} />
+          <Route path="/payments" element={<Payments />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Layout>
