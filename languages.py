@@ -27,6 +27,7 @@ TEXTS = {
         ),
         "broadcast_usage": "❌ Format: /broadcast <xabar>",
         "broadcast_done": "✅ Xabar {count} ta foydalanuvchiga yuborildi.",
+        "support_btn": "📨 Admin bilan bog'lanish",
     },
     "ru": {
         "choose_lang": "🌐 Выберите язык:",
@@ -56,6 +57,7 @@ TEXTS = {
         ),
         "broadcast_usage": "❌ Формат: /broadcast <сообщение>",
         "broadcast_done": "✅ Сообщение отправлено {count} пользователям.",
+        "support_btn": "📨 Написать администратору",
     },
     "en": {
         "choose_lang": "🌐 Choose language:",
@@ -85,6 +87,7 @@ TEXTS = {
         ),
         "broadcast_usage": "❌ Format: /broadcast <message>",
         "broadcast_done": "✅ Message sent to {count} users.",
+        "support_btn": "📨 Contact Admin",
     },
 }
 
