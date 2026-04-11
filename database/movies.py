@@ -4,16 +4,16 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def get_movie_by_code(code: str) -> dict | None:
+def get_movie_by_code(code: str):
     try:
-        res = supabase.table("movies").select("*").eq("code", code.strip()).maybe_single().execute()
-        return res.data
+        res = supabase.table("movies").select("*").eq("code", code.strip()).limit(1).execute()
+        return res.data[0] if res.data else None
     except Exception as e:
         logger.error(f"get_movie_by_code error: {e}")
         return None
 
 
-def search_movies(query: str) -> list[dict]:
+def search_movies(query: str) -> list:
     try:
         res = supabase.table("movies").select("code, title").ilike("title", f"%{query}%").limit(5).execute()
         return res.data or []
@@ -44,7 +44,7 @@ def delete_movie(code: str) -> bool:
         return False
 
 
-def list_movies(limit: int = 10, offset: int = 0) -> list[dict]:
+def list_movies(limit: int = 10, offset: int = 0) -> list:
     try:
         res = supabase.table("movies").select("code, title, created_at").order("created_at", desc=True).range(offset, offset + limit - 1).execute()
         return res.data or []
