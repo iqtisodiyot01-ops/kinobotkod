@@ -12,8 +12,10 @@ export default function Movies() {
 
   const load = async () => {
     setLoading(true)
-    const { data } = await supabase.from('movies').select('*').order('created_at', { ascending: false })
-    setMovies(data || [])
+    const { data, error: err } = await supabase.from('movies').select('*')
+    if (err) console.error('Movies error:', err.message)
+    const sorted = (data || []).sort((a, b) => (b.code > a.code ? 1 : -1))
+    setMovies(sorted)
     setLoading(false)
   }
 
