@@ -11,7 +11,8 @@ export default function Channels() {
 
   const load = async () => {
     setLoading(true)
-    const { data } = await supabase.from('channels').select('*').order('created_at', { ascending: false })
+    const { data, error: err } = await supabase.from('channels').select('*')
+    if (err) console.error('Channels error:', err.message)
     setChannels(data || [])
     setLoading(false)
   }
