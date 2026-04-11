@@ -1,22 +1,27 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 
+const emptyForm = { code: '', title: '', description: '', file_id: '', is_paid: false, price: '' }
+
 export default function Movies() {
   const [movies, setMovies] = useState([])
   const [loading, setLoading] = useState(true)
   const [showAdd, setShowAdd] = useState(false)
   const [showGuide, setShowGuide] = useState(false)
   const [search, setSearch] = useState('')
-  const [form, setForm] = useState({ code: '', title: '', file_id: '' })
+  const [form, setForm] = useState(emptyForm)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [editMovie, setEditMovie] = useState(null)
+  const [editForm, setEditForm] = useState(emptyForm)
+  const [editSaving, setEditSaving] = useState(false)
+  const [editError, setEditError] = useState('')
 
   const load = async () => {
     setLoading(true)
     const { data, error: err } = await supabase.from('movies').select('*')
     if (err) console.error('Movies error:', err.message)
-    const sorted = (data || []).sort((a, b) => Number(a.code) - Number(b.code))
-    setMovies(sorted)
+    setMovies((data || []).sort((a, b) => Number(a.code) - Number(b.code)))
     setLoading(false)
   }
 
@@ -34,12 +39,52 @@ export default function Movies() {
     const { error: err } = await supabase.from('movies').upsert({
       code: form.code.trim(),
       title: form.title.trim(),
-      file_id: form.file_id.trim() || null
+      description: form.description.trim() || null,
+      file_id: form.file_id.trim() || null,
+      is_paid: form.is_paid,
+      price: form.is_paid ? (parseInt(form.price) || 0) : 0,
     })
     setSaving(false)
     if (err) { setError(err.message); return }
     setShowAdd(false)
-    setForm({ code: '', title: '', file_id: '' })
+    setForm(emptyForm)
+    load()
+  }
+
+  const openEdit = (m) => {
+    setEditMovie(m)
+    setEditForm({
+      code: m.code || '',
+      title: m.title || '',
+      description: m.description || '',
+      file_id: m.file_id || '',
+      is_paid: m.is_paid || false,
+      price: m.price ? String(m.price) : '',
+    })
+    setEditError('')
+  }
+
+  const saveEdit = async (e) => {
+    e.preventDefault()
+    if (!editForm.code || !editForm.title) { setEditError('Kod va nom majburiy!'); return }
+    setEditSaving(true); setEditError('')
+    const oldCode = editMovie.code
+    const newCode = editForm.code.trim()
+
+    if (oldCode !== newCode) {
+      await supabase.from('movies').delete().eq('code', oldCode)
+    }
+    const { error: err } = await supabase.from('movies').upsert({
+      code: newCode,
+      title: editForm.title.trim(),
+      description: editForm.description.trim() || null,
+      file_id: editForm.file_id.trim() || null,
+      is_paid: editForm.is_paid,
+      price: editForm.is_paid ? (parseInt(editForm.price) || 0) : 0,
+    })
+    setEditSaving(false)
+    if (err) { setEditError(err.message); return }
+    setEditMovie(null)
     load()
   }
 
@@ -49,30 +94,75 @@ export default function Movies() {
     load()
   }
 
+  const sqlMigration = `-- Kinolar jadvaliga yangi ustunlar qo'shish:
+ALTER TABLE movies ADD COLUMN IF NOT EXISTS description TEXT;
+ALTER TABLE movies ADD COLUMN IF NOT EXISTS is_paid BOOLEAN DEFAULT FALSE;
+ALTER TABLE movies ADD COLUMN IF NOT EXISTS price INTEGER DEFAULT 0;
+ALTER TABLE movies ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();`
+
+  const MovieForm = ({ f, setF, onSubmit, onCancel, isSaving, err, isEdit }) => (
+    <form onSubmit={onSubmit}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div className="form-group">
+          <label className="form-label">Kod *</label>
+          <input className="form-input" placeholder="101" value={f.code} onChange={e => setF({ ...f, code: e.target.value })} />
+        </div>
+        <div className="form-group">
+          <label className="form-label">Kino nomi *</label>
+          <input className="form-input" placeholder="Inception (2010)" value={f.title} onChange={e => setF({ ...f, title: e.target.value })} />
+        </div>
+      </div>
+      <div className="form-group">
+        <label className="form-label">Tavsif (ixtiyoriy)</label>
+        <textarea className="form-input" rows={3} placeholder="Kino haqida qisqacha..." value={f.description} onChange={e => setF({ ...f, description: e.target.value })} style={{ resize: 'vertical' }} />
+      </div>
+      <div className="form-group">
+        <label className="form-label">Telegram Video ID <span style={{ color: '#475569', fontWeight: 400 }}>(botdan oling)</span></label>
+        <input className="form-input" placeholder="BAACAgIAAxk..." value={f.file_id} onChange={e => setF({ ...f, file_id: e.target.value })} />
+      </div>
+      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+        <div className="form-group" style={{ flex: 'none' }}>
+          <label className="form-label">💎 Pulli kino</label>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button type="button" className="btn btn-sm"
+              style={{ background: f.is_paid ? '#1a1a2e' : '#052e16', color: f.is_paid ? '#a78bfa' : '#4ade80', border: f.is_paid ? '1px solid #a78bfa' : '1px solid #166534' }}
+              onClick={() => setF({ ...f, is_paid: !f.is_paid })}>
+              {f.is_paid ? '💎 Ha' : '🆓 Bepul'}
+            </button>
+          </div>
+        </div>
+        {f.is_paid && (
+          <div className="form-group" style={{ flex: 1 }}>
+            <label className="form-label">Narxi (UZS) *</label>
+            <input className="form-input" type="number" placeholder="50000" value={f.price} onChange={e => setF({ ...f, price: e.target.value })} />
+          </div>
+        )}
+      </div>
+      {err && <div className="error-msg" style={{ marginBottom: 12 }}>{err}</div>}
+      <div className="modal-actions">
+        <button type="button" className="btn" style={{ background: '#2d3148', color: '#94a3b8' }} onClick={onCancel}>Bekor</button>
+        <button type="submit" className="btn btn-primary" disabled={isSaving}>
+          {isSaving ? 'Saqlanmoqda...' : isEdit ? '✏️ Saqlash' : '💾 Qo\'shish'}
+        </button>
+      </div>
+    </form>
+  )
+
   return (
     <>
       <div className="page-title">Kinolar</div>
 
       <div className="info-box">
         <b>📹 Video ID (file_id) qanday olish kerak?</b><br />
-        1. Botga video yuborishdan oldin <code>/getid</code> yozing<br />
-        2. Keyin kinoni <b>video sifatida</b> yuboring (fayl sifatida emas!)<br />
-        3. Bot sizga <code>file_id</code> qaytaradi — shu kodni nusxalab oling<br />
-        4. Quyida "+ Qo'shish" ni bosib, shu ID ni kiriting
+        Botga to'g'ridan video yuboring — bot darhol <code>file_id</code> qaytaradi
         <button
           onClick={() => setShowGuide(!showGuide)}
           style={{ marginLeft: 10, background: 'none', border: '1px solid #1e3a5f', color: '#60a5fa', borderRadius: 6, padding: '2px 8px', cursor: 'pointer', fontSize: 12 }}
-        >
-          {showGuide ? 'Yopish' : 'Batafsil ▼'}
-        </button>
+        >{showGuide ? 'Yopish' : 'Batafsil ▼'}</button>
         {showGuide && (
           <div style={{ marginTop: 10, borderTop: '1px solid #1e3a5f', paddingTop: 10 }}>
-            <b>Batafsil qo'llanma:</b><br />
-            • Botingizga o'ting (masalan: @kinokodbot)<br />
-            • <code>/getid</code> yuboring — bot tayyor holatga o'tadi<br />
-            • Telegramda video faylni toping → <b>Forward</b> qiling yoki to'g'ridan yuborins<br />
-            • Bot darhol file_id ni yuboradi<br />
-            • Shu ID ni "+ Qo'shish" modali ichidagi "Telegram File ID" ga kiriting
+            <b>SQL (yangi ustunlar):</b>
+            <pre style={{ background: '#0a0a0a', padding: 10, borderRadius: 6, fontSize: 11, color: '#86efac', overflow: 'auto', marginTop: 6 }}>{sqlMigration}</pre>
           </div>
         )}
       </div>
@@ -88,7 +178,7 @@ export default function Movies() {
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
-            <button className="btn btn-primary btn-sm" onClick={() => { setForm({ code: '', title: '', file_id: '' }); setError(''); setShowAdd(true) }}>
+            <button className="btn btn-primary btn-sm" onClick={() => { setForm(emptyForm); setError(''); setShowAdd(true) }}>
               + Qo'shish
             </button>
           </div>
@@ -100,21 +190,30 @@ export default function Movies() {
                 <tr>
                   <th>Kod</th>
                   <th>Nomi</th>
-                  <th>Video ID</th>
+                  <th>Video</th>
+                  <th>Narx</th>
                   <th></th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.length === 0 && <tr><td colSpan={4} className="empty">Kinolar topilmadi</td></tr>}
+                {filtered.length === 0 && <tr><td colSpan={5} className="empty">Kinolar topilmadi</td></tr>}
                 {filtered.map(m => (
                   <tr key={m.code}>
                     <td><span className="badge badge-blue">{m.code}</span></td>
-                    <td style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.title}</td>
+                    <td style={{ maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.title}</td>
                     <td style={{ color: m.file_id ? '#4ade80' : '#475569', fontSize: 12 }}>
-                      {m.file_id ? '✅ Bor' : '—'}
+                      {m.file_id ? '✅' : '—'}
                     </td>
                     <td>
-                      <button className="btn btn-danger btn-sm" onClick={() => remove(m.code)}>O'chirish</button>
+                      {m.is_paid
+                        ? <span className="badge" style={{ background: '#1a1a2e', color: '#a78bfa' }}>💎 {(m.price || 0).toLocaleString()}</span>
+                        : <span style={{ color: '#475569', fontSize: 12 }}>Bepul</span>}
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button className="btn btn-sm" style={{ background: '#1a3a5c', color: '#60a5fa' }} onClick={() => openEdit(m)}>✏️</button>
+                        <button className="btn btn-danger btn-sm" onClick={() => remove(m.code)}>🗑️</button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -128,48 +227,16 @@ export default function Movies() {
         <div className="modal-bg" onClick={e => e.target === e.currentTarget && setShowAdd(false)}>
           <div className="modal">
             <div className="modal-title">🎬 Yangi kino qo'shish</div>
-            <form onSubmit={save}>
-              <div className="form-group">
-                <label className="form-label">Kod * <span style={{ color: '#475569', fontWeight: 400 }}>(foydalanuvchi shu kodni yuboradi)</span></label>
-                <input
-                  className="form-input"
-                  placeholder="Masalan: 101"
-                  value={form.code}
-                  onChange={e => setForm({ ...form, code: e.target.value })}
-                />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Kino nomi *</label>
-                <input
-                  className="form-input"
-                  placeholder="Masalan: Inception (2010)"
-                  value={form.title}
-                  onChange={e => setForm({ ...form, title: e.target.value })}
-                />
-              </div>
-              <div className="form-group">
-                <label className="form-label">
-                  Telegram Video ID
-                  <span style={{ color: '#475569', fontWeight: 400, marginLeft: 6 }}>(botdan /getid orqali oling)</span>
-                </label>
-                <input
-                  className="form-input"
-                  placeholder="BAACAgIAAxk..."
-                  value={form.file_id}
-                  onChange={e => setForm({ ...form, file_id: e.target.value })}
-                />
-                <div style={{ fontSize: 11, color: '#475569', marginTop: 4 }}>
-                  ⚠️ ID bo'lmasa foydalanuvchi video ololmaydi — yuqoridagi qo'llanmadan oling
-                </div>
-              </div>
-              {error && <div className="error-msg" style={{ marginBottom: 12 }}>{error}</div>}
-              <div className="modal-actions">
-                <button type="button" className="btn" style={{ background: '#2d3148', color: '#94a3b8' }} onClick={() => setShowAdd(false)}>Bekor</button>
-                <button type="submit" className="btn btn-primary" disabled={saving}>
-                  {saving ? 'Saqlanmoqda...' : '💾 Saqlash'}
-                </button>
-              </div>
-            </form>
+            <MovieForm f={form} setF={setForm} onSubmit={save} onCancel={() => setShowAdd(false)} isSaving={saving} err={error} isEdit={false} />
+          </div>
+        </div>
+      )}
+
+      {editMovie && (
+        <div className="modal-bg" onClick={e => e.target === e.currentTarget && setEditMovie(null)}>
+          <div className="modal">
+            <div className="modal-title">✏️ Kinoni tahrirlash</div>
+            <MovieForm f={editForm} setF={setEditForm} onSubmit={saveEdit} onCancel={() => setEditMovie(null)} isSaving={editSaving} err={editError} isEdit={true} />
           </div>
         </div>
       )}
