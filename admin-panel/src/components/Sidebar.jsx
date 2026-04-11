@@ -5,6 +5,8 @@ const items = [
   { icon: '🎬', label: 'Kinolar', path: '/movies' },
   { icon: '📢', label: 'Kanallar', path: '/channels' },
   { icon: '👥', label: 'Foydalanuvchilar', path: '/users' },
+  { icon: '📡', label: 'Broadcast', path: '/broadcast' },
+  { icon: '💳', label: "To'lovlar", path: '/payments' },
 ]
 
 export default function Sidebar() {
