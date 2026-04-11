@@ -48,22 +48,22 @@ def register_user(user_id: int, full_name: str, username: str,
         res = supabase.table("users").select(f"{id_col},{lang_col}").eq(id_col, user_id).limit(1).execute()
         if res.data:
             lang = res.data[0].get(lang_col, "uz") or "uz"
-            if id_col == "telegram_id":
-                try:
-                    supabase.table("users").update({
-                        "full_name": full_name or "",
-                        "username": username or "",
-                    }).eq(id_col, user_id).execute()
-                except Exception:
-                    pass
+            try:
+                supabase.table("users").update({
+                    "full_name": full_name or "",
+                    "username": username or "",
+                }).eq(id_col, user_id).execute()
+            except Exception:
+                pass
             return lang
         auto_lang = _detect_lang(telegram_lang)
-        data = {id_col: user_id, lang_col: auto_lang}
-        if id_col == "telegram_id":
-            data["full_name"] = full_name or ""
-            data["username"] = username or ""
-            data["is_premium"] = False
-        supabase.table("users").insert(data).execute()
+        data = {id_col: user_id, lang_col: auto_lang,
+                "full_name": full_name or "", "username": username or "", "is_premium": False}
+        try:
+            supabase.table("users").insert(data).execute()
+        except Exception:
+            minimal = {id_col: user_id, lang_col: auto_lang}
+            supabase.table("users").insert(minimal).execute()
         return auto_lang
     except Exception as e:
         logger.error(f"register_user error: {e}")
