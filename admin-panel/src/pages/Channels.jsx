@@ -5,7 +5,7 @@ export default function Channels() {
   const [channels, setChannels] = useState([])
   const [loading, setLoading] = useState(true)
   const [showAdd, setShowAdd] = useState(false)
-  const [form, setForm] = useState({ channel_id: '', title: '', username: '' })
+  const [form, setForm] = useState({ title: '', username: '' })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -21,17 +21,23 @@ export default function Channels() {
 
   const save = async (e) => {
     e.preventDefault()
-    if (!form.channel_id || !form.title) { setError('ID va nom majburiy!'); return }
-    setSaving(true); setError('')
+    if (!form.title.trim() || !form.username.trim()) {
+      setError('Nomi va username majburiy!')
+      return
+    }
+    setSaving(true)
+    setError('')
+    const username = form.username.trim().replace(/^@/, '')
+    const channel_id = '@' + username
     const { error: err } = await supabase.from('channels').insert({
-      channel_id: form.channel_id.trim(),
+      channel_id,
       title: form.title.trim(),
-      username: form.username.trim() || null
+      username,
     })
     setSaving(false)
     if (err) { setError(err.message); return }
     setShowAdd(false)
-    setForm({ channel_id: '', title: '', username: '' })
+    setForm({ title: '', username: '' })
     load()
   }
 
@@ -47,49 +53,58 @@ export default function Channels() {
       <div className="card">
         <div className="card-header">
           <span className="card-title">Obuna kanallar ({channels.length})</span>
-          <button className="btn btn-primary btn-sm" onClick={() => setShowAdd(true)}>+ Qo'shish</button>
+          <button className="btn btn-primary btn-sm" onClick={() => { setForm({ title: '', username: '' }); setError(''); setShowAdd(true) }}>
+            + Qo'shish
+          </button>
         </div>
         {loading ? <div className="loading">Yuklanmoqda...</div> : (
-          <table>
-            <thead>
-              <tr>
-                <th>Channel ID</th>
-                <th>Nomi</th>
-                <th>Username</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {channels.length === 0 && <tr><td colSpan={4} className="empty">Kanallar yo'q</td></tr>}
-              {channels.map(ch => (
-                <tr key={ch.id}>
-                  <td><span className="badge badge-green">{ch.channel_id}</span></td>
-                  <td>{ch.title}</td>
-                  <td style={{ color: '#64748b' }}>{ch.username ? `@${ch.username}` : '—'}</td>
-                  <td><button className="btn btn-danger btn-sm" onClick={() => remove(ch.id)}>O'chirish</button></td>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nomi</th>
+                  <th>Username</th>
+                  <th></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {channels.length === 0 && <tr><td colSpan={3} className="empty">Kanallar yo'q</td></tr>}
+                {channels.map(ch => (
+                  <tr key={ch.id}>
+                    <td style={{ fontWeight: 600 }}>{ch.title}</td>
+                    <td>
+                      <a
+                        href={`https://t.me/${(ch.username || ch.channel_id || '').replace('@','')}`}
+                        target="_blank" rel="noreferrer"
+                        style={{ color: '#60a5fa', textDecoration: 'none' }}
+                      >@{(ch.username || ch.channel_id || '').replace('@','')}</a>
+                    </td>
+                    <td><button className="btn btn-danger btn-sm" onClick={() => remove(ch.id)}>O'chirish</button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
       {showAdd && (
         <div className="modal-bg" onClick={e => e.target === e.currentTarget && setShowAdd(false)}>
           <div className="modal">
-            <div className="modal-title">Kanal qo'shish</div>
+            <div className="modal-title">📢 Kanal qo'shish</div>
             <form onSubmit={save}>
               <div className="form-group">
-                <label className="form-label">Channel ID * (masalan: -1001234567890)</label>
-                <input className="form-input" placeholder="-100..." value={form.channel_id} onChange={e => setForm({ ...form, channel_id: e.target.value })} />
+                <label className="form-label">Kanal nomi *</label>
+                <input className="form-input" placeholder="Masalan: KinoKod Rasmiy" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} />
               </div>
               <div className="form-group">
-                <label className="form-label">Nomi *</label>
-                <input className="form-input" placeholder="Kanal nomi" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Username (@ siz)</label>
-                <input className="form-input" placeholder="kinokod" value={form.username} onChange={e => setForm({ ...form, username: e.target.value })} />
+                <label className="form-label">Username * (@ belgisisiz)</label>
+                <input className="form-input" placeholder="kinokod" value={form.username} onChange={e => setForm({ ...form, username: e.target.value.replace(/^@/, '') })} />
+                {form.username && (
+                  <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>
+                    Kanal: <a href={`https://t.me/${form.username}`} target="_blank" rel="noreferrer" style={{ color: '#60a5fa' }}>https://t.me/{form.username}</a>
+                  </div>
+                )}
               </div>
               {error && <div className="error-msg" style={{ marginBottom: 12 }}>{error}</div>}
               <div className="modal-actions">
