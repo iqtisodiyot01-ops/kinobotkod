@@ -17,6 +17,7 @@ class UserMiddleware(BaseMiddleware):
                 user_id=user.id,
                 full_name=user.full_name,
                 username=user.username,
+                telegram_lang=user.language_code,
             )
             data["lang"] = language
         else:
