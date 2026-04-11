@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useState } from 'react'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
@@ -10,11 +10,32 @@ import Payments from './pages/Payments'
 import Support from './pages/Support'
 import Sidebar from './components/Sidebar'
 
+const pageTitles = {
+  '/': 'Dashboard',
+  '/movies': '🎬 Kinolar',
+  '/channels': '📢 Kanallar',
+  '/users': '👥 Foydalanuvchilar',
+  '/broadcast': '📡 Broadcast',
+  '/payments': "💳 To'lovlar",
+  '/support': '📨 Xabarlar',
+}
+
 function Layout({ children }) {
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const loc = useLocation()
+  const title = pageTitles[loc.pathname] || 'KinoKod'
+
   return (
     <div className="layout">
-      <Sidebar />
-      <main className="main">{children}</main>
+      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+        <div className="mobile-topbar">
+          <button className="hamburger" onClick={() => setSidebarOpen(true)}>☰</button>
+          <span className="mobile-title">🎬 Kino<span>Kod</span></span>
+          <span style={{ fontSize: 13, color: '#64748b', marginLeft: 'auto' }}>{title}</span>
+        </div>
+        <main className="main">{children}</main>
+      </div>
     </div>
   )
 }
