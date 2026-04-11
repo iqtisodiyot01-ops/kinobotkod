@@ -22,9 +22,6 @@ class AddMovieState(StatesGroup):
     waiting_movie = State()
 
 
-class GetIdState(StatesGroup):
-    waiting_video = State()
-
 
 @router.message(Command("stats"))
 async def cmd_stats(message: Message):
@@ -141,42 +138,45 @@ async def receive_broadcast(message: Message, bot: Bot, state: FSMContext):
 
 
 @router.message(Command("getid"))
-async def cmd_getid(message: Message, state: FSMContext):
-    await state.set_state(GetIdState.waiting_video)
+async def cmd_getid(message: Message):
     await message.answer(
-        "📹 Endi menga video yuboring — file_id ni qaytaraman.\n\n"
-        "⚠️ Video <b>video sifatida</b> yuboring (fayl emas!)\n\n"
-        "Bekor qilish: /cancel",
+        "📹 <b>Video ID olish:</b>\n\n"
+        "Faqat bu chatga video yuboring — men sizga darhol <code>file_id</code> qaytaraman.\n\n"
+        "⚠️ <b>Video sifatida</b> yuboring (fayl/document emas)",
         parse_mode="HTML"
     )
 
 
-@router.message(GetIdState.waiting_video, F.video)
-async def getid_receive_video(message: Message, state: FSMContext):
+@router.message(F.video)
+async def any_video_get_id(message: Message, state: FSMContext):
+    current_state = await state.get_state()
+    if current_state == "AddMovieState:waiting_movie":
+        return
     fid = message.video.file_id
-    await state.clear()
+    name = message.video.file_name or "—"
     await message.answer(
         f"✅ <b>Video File ID:</b>\n\n<code>{fid}</code>\n\n"
+        f"📁 Fayl: {name}\n"
         f"📋 Bu ID ni admin panelda 'Kino qo'shish' → 'Telegram Video ID' ga kiriting.",
         parse_mode="HTML"
     )
 
 
-@router.message(GetIdState.waiting_video, F.document)
-async def getid_receive_document(message: Message, state: FSMContext):
-    fid = message.document.file_id
-    await state.clear()
-    await message.answer(
-        f"⚠️ Bu <b>fayl</b> (document) sifatida yuborildi, video emas.\n\n"
-        f"File ID: <code>{fid}</code>\n\n"
-        f"Video sifatida yuborish uchun: papkadan faylni tanlang → 'Send as video'",
-        parse_mode="HTML"
-    )
-
-
-@router.message(GetIdState.waiting_video)
-async def getid_wrong_type(message: Message):
-    await message.answer("❌ Faqat video yuboring! Yoki /cancel bosing.")
+@router.message(F.document)
+async def any_document_get_id(message: Message):
+    doc = message.document
+    if doc.mime_type and doc.mime_type.startswith("video"):
+        fid = doc.file_id
+        await message.answer(
+            f"⚠️ Bu <b>fayl</b> (document) sifatida yuborildi.\n\n"
+            f"File ID: <code>{fid}</code>\n\n"
+            f"<b>Eslatma:</b> Foydalanuvchiga video sifatida ko'rinishi uchun "
+            f"'Send as video' bilan yuboring.",
+            parse_mode="HTML"
+        )
+    else:
+        fid = doc.file_id
+        await message.answer(f"📎 Document File ID:\n\n<code>{fid}</code>", parse_mode="HTML")
 
 
 @router.message(Command("cancel"))
