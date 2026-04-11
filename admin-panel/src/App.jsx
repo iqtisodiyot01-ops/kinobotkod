@@ -8,6 +8,7 @@ import Users from './pages/Users'
 import Broadcast from './pages/Broadcast'
 import Payments from './pages/Payments'
 import Support from './pages/Support'
+import Ads from './pages/Ads'
 import Sidebar from './components/Sidebar'
 
 const pageTitles = {
@@ -18,6 +19,7 @@ const pageTitles = {
   '/broadcast': '📡 Broadcast',
   '/payments': "💳 To'lovlar",
   '/support': '📨 Xabarlar',
+  '/ads': '📣 Reklama',
 }
 
 function Layout({ children }) {
@@ -66,6 +68,7 @@ export default function App() {
           <Route path="/broadcast" element={<Broadcast />} />
           <Route path="/payments" element={<Payments />} />
           <Route path="/support" element={<Support />} />
+          <Route path="/ads" element={<Ads />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Layout>
