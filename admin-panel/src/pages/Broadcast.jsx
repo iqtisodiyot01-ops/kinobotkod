@@ -12,20 +12,30 @@ export default function Broadcast() {
 
   const loadHistory = async () => {
     setLoading(true)
-    const { data } = await supabase.from('broadcasts').select('*').order('created_at', { ascending: false }).limit(20)
-    setHistory(data || [])
+    const { data } = await supabase.from('broadcasts').select('*').limit(20)
+    const sorted = (data || []).sort((a, b) => b.id - a.id)
+    setHistory(sorted)
     setLoading(false)
   }
 
-  useEffect(() => { loadHistory() }, [])
+  useEffect(() => {
+    loadHistory()
+    const saved = localStorage.getItem('kk_bot_token')
+    if (saved) setBotToken(saved)
+  }, [])
 
   const startBroadcast = async () => {
     if (!text.trim()) return
+    const token = botToken.trim() || import.meta.env.VITE_BOT_TOKEN || ''
+    if (!token) { alert('Bot token kiriting!'); return }
+    localStorage.setItem('kk_bot_token', token)
     setSending(true)
     setResult(null)
 
-    const { data: users } = await supabase.from('users').select('telegram_id')
-    const ids = (users || []).map(u => u.telegram_id)
+    const { data: users } = await supabase.from('users').select('*')
+    const ids = (users || [])
+      .map(u => u.telegram_id || u.user_id)
+      .filter(Boolean)
     const total = ids.length
 
     const { data: bc } = await supabase.from('broadcasts').insert({
@@ -40,7 +50,7 @@ export default function Broadcast() {
 
     for (let i = 0; i < ids.length; i++) {
       try {
-        const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+        const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ chat_id: ids[i], text: text.trim() }),
@@ -78,9 +88,11 @@ export default function Broadcast() {
         <div className="card-header"><span className="card-title">Xabar yuborish</span></div>
         <div style={{ padding: 20 }}>
           <div className="form-group">
-            <label className="form-label">Bot Token (telegram API uchun)</label>
-            <input className="form-input" type="password" placeholder="BOT_TOKEN" value={botToken} onChange={e => setBotToken(e.target.value)} />
-            <div style={{ fontSize: 11, color: '#475569', marginTop: 4 }}>Bot tokenini yozing — barcha foydalanuvchilarga Telegram API orqali yuboramiz</div>
+            <label className="form-label">Bot Token</label>
+            <input className="form-input" type="password" placeholder="Bir marta kiriting — saqlab qolinadi" value={botToken} onChange={e => setBotToken(e.target.value)} />
+            <div style={{ fontSize: 11, color: '#475569', marginTop: 4 }}>
+              {botToken ? '✅ Token saqlangan' : '⚠️ Bot tokenini kiriting (bir marta)'}
+            </div>
           </div>
           <div className="form-group">
             <label className="form-label">Xabar matni *</label>
@@ -109,7 +121,7 @@ export default function Broadcast() {
             <button
               className="btn btn-primary"
               onClick={startBroadcast}
-              disabled={sending || !text.trim() || !botToken.trim()}
+              disabled={sending || !text.trim() || (!botToken.trim() && !import.meta.env.VITE_BOT_TOKEN)}
             >
               {sending ? '⏳ Yuborilmoqda...' : '📡 Yuborish'}
             </button>
