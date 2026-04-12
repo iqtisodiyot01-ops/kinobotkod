@@ -6,16 +6,21 @@ from languages import get_text
 
 router = Router()
 
+MENU_BUTTONS = {
+    "❓ Yordam", "❓ Помощь", "❓ Help",
+    "📨 Admin bilan bog'lanish", "📨 Написать администратору", "📨 Contact Admin",
+    "📊 Statusim", "📊 Мой статус", "📊 My Status",
+    "🎟 Referral kreditim", "🎟 Реф. кредиты", "🎟 My Credits",
+    "💳 To'lov", "💳 Оплата", "💳 Payment",
+    "ℹ️ Bot haqida", "ℹ️ О боте", "ℹ️ About Bot",
+}
+
 
 @router.message(F.text & ~F.text.startswith("/"))
 async def handle_text(message: Message, bot: Bot, lang: str):
     text = message.text.strip()
 
-    menu_btns = [
-        "❓ Yordam", "❓ Помощь", "❓ Help",
-        "📨 Admin bilan bog'lanish", "📨 Написать администратору", "📨 Contact Admin",
-    ]
-    if text in menu_btns:
+    if text in MENU_BUTTONS:
         return
 
     not_subbed = await check_subscription(bot, message.from_user.id)
