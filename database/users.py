@@ -3,11 +3,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# Existing Supabase schema uses user_id and lang columns
-# After running migrate.sql, it will use telegram_id and language
-# Bot auto-detects which schema is active at startup
-
-_SCHEMA = {"id": "user_id", "lang": "lang"}
+_SCHEMA = {"id": "telegram_id", "lang": "language"}
 
 
 def _init_schema():
@@ -21,8 +17,8 @@ def _init_schema():
             _SCHEMA = {"id": "user_id", "lang": "lang"}
             logger.info("Schema: old (user_id, lang)")
     except Exception:
-        _SCHEMA = {"id": "user_id", "lang": "lang"}
-        logger.info("Schema: old (user_id, lang) [fallback]")
+        _SCHEMA = {"id": "telegram_id", "lang": "language"}
+        logger.info("Schema: new (telegram_id, language) [default]")
 
 
 def init():
@@ -49,11 +45,16 @@ def register_user(user_id: int, full_name: str, username: str,
         if res.data:
             return res.data[0].get(lang_col, "uz") or "uz"
         auto_lang = _detect_lang(telegram_lang)
-        data = {id_col: user_id, lang_col: auto_lang}
-        if id_col == "telegram_id":
-            data["full_name"] = full_name or ""
-            data["username"] = username or ""
-            data["is_premium"] = False
+        data = {
+            id_col: user_id,
+            lang_col: auto_lang,
+            "full_name": full_name or "",
+            "username": username or "",
+            "is_premium": False,
+            "referral_from": referral_from,
+            "referral_count": 0,
+            "credits": 0,
+        }
         supabase.table("users").insert(data).execute()
         return auto_lang
     except Exception as e:
@@ -82,6 +83,62 @@ def set_user_language(user_id: int, language: str):
         logger.error(f"set_user_language error: {e}")
 
 
+def check_premium(user_id: int) -> bool:
+    id_col = _SCHEMA["id"]
+    try:
+        res = supabase.table("users").select("is_premium").eq(id_col, user_id).limit(1).execute()
+        if res.data:
+            return bool(res.data[0].get("is_premium", False))
+        return False
+    except Exception as e:
+        logger.error(f"check_premium error: {e}")
+        return False
+
+
+def set_premium(user_id: int, value: bool = True):
+    id_col = _SCHEMA["id"]
+    try:
+        supabase.table("users").update({"is_premium": value}).eq(id_col, user_id).execute()
+    except Exception as e:
+        logger.error(f"set_premium error: {e}")
+
+
+def get_user_credits(user_id: int) -> int:
+    id_col = _SCHEMA["id"]
+    try:
+        res = supabase.table("users").select("credits,referral_count").eq(id_col, user_id).limit(1).execute()
+        if res.data:
+            row = res.data[0]
+            return (row.get("credits") or 0) + (row.get("referral_count") or 0)
+        return 0
+    except Exception as e:
+        logger.error(f"get_user_credits error: {e}")
+        return 0
+
+
+def register_referral(referrer_id: int, new_user_id: int) -> int:
+    """Referrer ga credit beradi. Yangi credits sonini qaytaradi."""
+    id_col = _SCHEMA["id"]
+    try:
+        res = supabase.table("users").select("credits,referral_count").eq(id_col, referrer_id).limit(1).execute()
+        if not res.data:
+            return 0
+        row = res.data[0]
+        new_credits = (row.get("credits") or 0) + 1
+        new_referral_count = (row.get("referral_count") or 0) + 1
+        supabase.table("users").update({
+            "credits": new_credits,
+            "referral_count": new_referral_count,
+        }).eq(id_col, referrer_id).execute()
+
+        # Mark new user as referred
+        supabase.table("users").update({"referral_from": referrer_id}).eq(id_col, new_user_id).execute()
+        return new_credits
+    except Exception as e:
+        logger.error(f"register_referral error: {e}")
+        return 0
+
+
 def get_all_user_ids() -> list:
     id_col = _SCHEMA["id"]
     try:
@@ -97,20 +154,13 @@ def get_stats() -> dict:
         total = supabase.table("users").select("*", count="exact", head=True).execute()
         movies = supabase.table("movies").select("*", count="exact", head=True).execute()
         channels = supabase.table("channels").select("*", count="exact", head=True).execute()
+        premium = supabase.table("users").select("*", count="exact", head=True).eq("is_premium", True).execute()
         return {
             "users": total.count or 0,
-            "premium": 0,
+            "premium": premium.count or 0,
             "movies": movies.count or 0,
             "channels": channels.count or 0,
         }
     except Exception as e:
         logger.error(f"get_stats error: {e}")
         return {"users": 0, "premium": 0, "movies": 0, "channels": 0}
-
-
-def set_premium(user_id: int, value: bool = True):
-    id_col = _SCHEMA["id"]
-    try:
-        supabase.table("users").update({"is_premium": value}).eq(id_col, user_id).execute()
-    except Exception as e:
-        logger.error(f"set_premium error: {e}")
