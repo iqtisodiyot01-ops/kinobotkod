@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { supabase } from '../lib/supabase'
+import { supabase, formatSupabaseError } from '../lib/supabase'
 
 const emptyForm = { code: '', title: '', description: '', file_id: '', is_paid: false, price: '' }
 
@@ -158,7 +158,7 @@ export default function Movies() {
       price: form.is_paid ? (parseInt(form.price) || 0) : 0,
     })
     setSaving(false)
-    if (err) { setError(err.message); return }
+    if (err) { setError(formatSupabaseError(err, 'movies')); return }
     setShowAdd(false)
     setForm(emptyForm)
     load()
@@ -195,10 +195,10 @@ export default function Movies() {
     if (oldCode === newCode) {
       const { error: err } = await supabase.from('movies').update(payload).eq('code', oldCode)
       setEditSaving(false)
-      if (err) { setEditError(err.message); return }
+      if (err) { setEditError(formatSupabaseError(err, 'movies')); return }
     } else {
       const { error: insertErr } = await supabase.from('movies').insert(payload)
-      if (insertErr) { setEditSaving(false); setEditError(insertErr.message); return }
+      if (insertErr) { setEditSaving(false); setEditError(formatSupabaseError(insertErr, 'movies')); return }
       await supabase.from('movies').delete().eq('code', oldCode)
       setEditSaving(false)
     }

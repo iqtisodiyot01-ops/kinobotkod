@@ -1,13 +1,38 @@
+# Python
 __pycache__/
 *.pyc
 *.pyo
+*.pyd
+.venv/
+venv/
+env/
+
+# Secrets
 .env
 .env.*
-# FIX #23: Original .gitignore excluded ALL *.json and *.txt files including
-# package.json and requirements.txt. The `!requirements.txt` exception was there
-# but it still blocked other important files. Tighten the ignore rules:
-*.json
-!package.json
-!package-lock.json
-*.txt
-!requirements.txt
+!.env.example
+
+# Node
+node_modules/
+admin-panel/node_modules/
+
+# Build output
+dist/
+admin-panel/dist/
+build/
+
+# Lock files (optional — keep package-lock.json for reproducibility)
+# package-lock.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Logs
+*.log
+npm-debug.log*

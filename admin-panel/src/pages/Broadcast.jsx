@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { supabase } from '../lib/supabase'
+import { supabase, uploadBroadcastMedia } from '../lib/supabase'
 
 const MEDIA_TYPES = [
   { value: '', label: '📝 Faqat matn' },
@@ -161,26 +161,13 @@ export default function Broadcast() {
     setUploadFile(file)
     setUploading(true)
 
-    const ext = file.name.split('.').pop()
-    const path = `${mediaType || 'file'}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
+    const { url, error } = await uploadBroadcastMedia(file, mediaType || 'file')
 
-    const { error: upErr } = await supabase.storage
-      .from('broadcast-media')
-      .upload(path, file, { upsert: false })
-
-    if (upErr) {
-      // Bucket yo'q bo'lsa aniqroq xato
-      if (upErr.message?.includes('Bucket not found') || upErr.message?.includes('bucket')) {
-        setUploadError('Supabase Storage "broadcast-media" bucket topilmadi. Supabase → Storage → New bucket → "broadcast-media" (public) yarating.')
-      } else {
-        setUploadError('Yuklash xatosi: ' + upErr.message)
-      }
-      setUploading(false)
-      return
+    if (error) {
+      setUploadError(error)
+    } else {
+      setUploadedUrl(url)
     }
-
-    const { data: { publicUrl } } = supabase.storage.from('broadcast-media').getPublicUrl(path)
-    setUploadedUrl(publicUrl)
     setUploading(false)
   }
 

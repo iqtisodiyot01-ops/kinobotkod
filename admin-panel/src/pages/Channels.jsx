@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { supabase } from '../lib/supabase'
+import { supabase, formatSupabaseError } from '../lib/supabase'
 
 // ─── ChannelForm Movies.jsx dagi kabi TASHQARIDA aniqlangan ───────────────────
 function ChannelForm({ f, setF, onSubmit, onCancel, isSaving, err, isEdit, onCheck, checkResult, checking }) {
@@ -180,7 +180,7 @@ export default function Channels() {
       username,
     })
     setSaving(false)
-    if (err) { setError(err.message); return }
+    if (err) { setError(formatSupabaseError(err, 'channels')); return }
     setShowAdd(false)
     setForm({ title: '', username: '' })
     setCheckResult(null)
@@ -208,7 +208,7 @@ export default function Channels() {
       username,
     }).eq('id', editCh.id)
     setEditSaving(false)
-    if (err) { setEditError(err.message); return }
+    if (err) { setEditError(formatSupabaseError(err, 'channels')); return }
     setEditCh(null)
     load()
   }
