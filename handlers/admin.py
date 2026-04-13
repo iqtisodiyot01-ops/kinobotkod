@@ -24,7 +24,8 @@ class AddMovieState(StatesGroup):
 
 @router.message(Command("stats"))
 async def cmd_stats(message: Message):
-    s = get_stats()
+    loop = asyncio.get_event_loop()
+    s = await loop.run_in_executor(None, get_stats)
     text = (
         f"📊 <b>Statistika</b>\n\n"
         f"👥 Foydalanuvchilar: <b>{s['users']}</b>\n"
@@ -37,7 +38,8 @@ async def cmd_stats(message: Message):
 
 @router.message(Command("movies"))
 async def cmd_list_movies(message: Message):
-    movies = list_movies(limit=20)
+    loop = asyncio.get_event_loop()
+    movies = await loop.run_in_executor(None, lambda: list_movies(limit=20))
     if not movies:
         await message.answer("Kinolar yo'q.")
         return
@@ -53,7 +55,9 @@ async def cmd_add_movie(message: Message, state: FSMContext):
         if len(parts) >= 2:
             code, title = parts[0].strip(), parts[1].strip()
             file_id = parts[2].strip() if len(parts) > 2 else None
-            if add_movie(code, title, file_id):
+            loop = asyncio.get_event_loop()
+            ok = await loop.run_in_executor(None, lambda: add_movie(code, title, file_id))
+            if ok:
                 await message.answer(f"✅ Kino qo'shildi: <code>{code}</code> — {title}", parse_mode="HTML")
             else:
                 await message.answer("❌ Xatolik yuz berdi.")
@@ -72,7 +76,9 @@ async def receive_movie_video(message: Message, state: FSMContext):
     else:
         await message.answer("❌ Caption: <kod>|<nom> formatida yozing")
         return
-    if add_movie(code, title, file_id):
+    loop = asyncio.get_event_loop()
+    ok = await loop.run_in_executor(None, lambda: add_movie(code, title, file_id))
+    if ok:
         await message.answer(f"✅ Kino qo'shildi: <code>{code}</code> — {title}", parse_mode="HTML")
     else:
         await message.answer("❌ Saqlashda xatolik.")
@@ -86,7 +92,9 @@ async def cmd_del_movie(message: Message):
         await message.answer("Foydalanish: /delmovie <kod>")
         return
     code = args[1].strip()
-    if delete_movie(code):
+    loop = asyncio.get_event_loop()
+    ok = await loop.run_in_executor(None, lambda: delete_movie(code))
+    if ok:
         await message.answer(f"🗑️ <code>{code}</code> o'chirildi.", parse_mode="HTML")
     else:
         await message.answer("❌ Xatolik.")
@@ -105,7 +113,9 @@ async def cmd_add_channel(message: Message):
     channel_id = parts[0].strip()
     title = parts[1].strip()
     username = parts[2].strip() if len(parts) > 2 else None
-    if add_channel(channel_id, title, username):
+    loop = asyncio.get_event_loop()
+    ok = await loop.run_in_executor(None, lambda: add_channel(channel_id, title, username))
+    if ok:
         await message.answer(f"✅ Kanal qo'shildi: {title}")
     else:
         await message.answer("❌ Xatolik.")
@@ -117,7 +127,9 @@ async def cmd_del_channel(message: Message):
     if len(args) < 2:
         await message.answer("Foydalanish: /delchannel <channel_id>")
         return
-    if delete_channel(args[1].strip()):
+    loop = asyncio.get_event_loop()
+    ok = await loop.run_in_executor(None, lambda: delete_channel(args[1].strip()))
+    if ok:
         await message.answer("✅ Kanal o'chirildi.")
     else:
         await message.answer("❌ Xatolik.")
@@ -132,7 +144,19 @@ async def cmd_broadcast(message: Message, state: FSMContext):
 @router.message(BroadcastState.waiting_message)
 async def receive_broadcast(message: Message, bot: Bot, state: FSMContext):
     await state.clear()
-    asyncio.create_task(run_broadcast(bot, message.text, message.from_user.id))
+    # FIX #18: asyncio.create_task requires a running loop and the task's exceptions
+    # are silently swallowed if not awaited. Use create_task but add a done callback
+    # to log any unhandled errors.
+    import logging
+    _logger = logging.getLogger(__name__)
+
+    task = asyncio.create_task(run_broadcast(bot, message.text, message.from_user.id))
+
+    def _on_done(t):
+        if not t.cancelled() and t.exception():
+            _logger.error(f"Broadcast task failed: {t.exception()}")
+
+    task.add_done_callback(_on_done)
     await message.answer("🚀 Broadcast ishga tushdi! Natija yuboriladi.")
 
 
@@ -147,5 +171,6 @@ async def cmd_admin_help(message: Message):
         "/addchannel <id>|<nom>|<username> — kanal qo'shish\n"
         "/delchannel <id> — kanal o'chirish\n"
         "/broadcast — barcha foydalanuvchilarga xabar\n"
+        "/getid — video file_id olish\n"
     )
     await message.answer(text, parse_mode="HTML")

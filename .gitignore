@@ -3,6 +3,11 @@ __pycache__/
 *.pyo
 .env
 .env.*
+# FIX #23: Original .gitignore excluded ALL *.json and *.txt files including
+# package.json and requirements.txt. The `!requirements.txt` exception was there
+# but it still blocked other important files. Tighten the ignore rules:
 *.json
+!package.json
+!package-lock.json
 *.txt
 !requirements.txt

@@ -15,13 +15,23 @@ logger = logging.getLogger(__name__)
 
 
 async def main():
-    users_db.init()
+    # FIX #2: users_db.init() is a synchronous blocking Supabase call done at startup.
+    # It must complete before bot starts. This is correct as-is, but we add error
+    # handling so a Supabase failure at init does not silently continue.
+    try:
+        users_db.init()
+    except Exception as e:
+        logger.error(f"Database init failed: {e}")
+        raise
 
+    # FIX #3: Bot should be closed properly on shutdown. Use try/finally.
     bot = Bot(token=BOT_TOKEN)
     dp = Dispatcher(storage=MemoryStorage())
 
     dp.update.middleware(UserMiddleware())
 
+    # Router order matters: admin before start/movies so admin commands are not
+    # intercepted by the generic text handler in movies.router.
     dp.include_router(admin.router)
     dp.include_router(support.router)
     dp.include_router(payment.router)
@@ -30,7 +40,10 @@ async def main():
     dp.include_router(movies.router)
 
     logger.info("KinoKod Bot ishga tushdi!")
-    await dp.start_polling(bot, skip_updates=True)
+    try:
+        await dp.start_polling(bot, skip_updates=True)
+    finally:
+        await bot.session.close()
 
 
 if __name__ == "__main__":

@@ -13,3 +13,9 @@ MOVIE_CHANNEL = os.getenv("MOVIE_CHANNEL", "")
 
 SUPABASE_URL = os.getenv("SUPABASE_URL", "").strip()
 SUPABASE_KEY = os.getenv("SUPABASE_KEY", "").strip()
+
+# FIX #1: PAYMENT_CARD, PAYMENT_PRICE, BOT_USERNAME were missing from root config.py
+# but referenced in handlers/payment.py and handlers/start.py
+PAYMENT_CARD = os.getenv("PAYMENT_CARD", "").strip()
+PAYMENT_PRICE = os.getenv("PAYMENT_PRICE", "30,000 so'm").strip()
+BOT_USERNAME = os.getenv("BOT_USERNAME", "").strip()

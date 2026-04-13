@@ -46,7 +46,11 @@ def delete_movie(code: str) -> bool:
 
 def list_movies(limit: int = 10, offset: int = 0) -> list:
     try:
-        res = supabase.table("movies").select("code, title, created_at").order("created_at", desc=True).range(offset, offset + limit - 1).execute()
+        res = (supabase.table("movies")
+               .select("code, title, created_at")
+               .order("created_at", desc=True)
+               .range(offset, offset + limit - 1)
+               .execute())
         return res.data or []
     except Exception as e:
         logger.error(f"list_movies error: {e}")

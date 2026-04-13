@@ -17,6 +17,10 @@ TEXTS = {
         "help_btn": "❓ Yordam",
         "language_btn": "🌐 Til",
         "support_btn": "📨 Admin bilan bog'lanish",
+        "status_btn": "📊 Statusim",
+        "credits_btn": "🎟 Referral kreditim",
+        "payment_btn": "💳 To'lov",
+        "about_btn": "ℹ️ Bot haqida",
         "help_text": (
             "🆘 <b>Yordam</b>\n\n"
             "🎬 Kino topish uchun:\n"
@@ -62,6 +66,20 @@ TEXTS = {
             "📨 Savollar: Admin bilan bog'lanish\n"
             "🌐 Til: /til"
         ),
+        "credits_text": (
+            "🎟 <b>Referral kreditlaringiz: {credits} ta</b>\n\n"
+            "Har bir do'stingiz referal linkingiz orqali botga kirsa, siz <b>1 ta kredit</b> olasiz!\n\n"
+            "🔗 Sizning linkingiz:\n<code>{link}</code>\n\n"
+            "📤 Linkni do'stlaringizga yuboring!"
+        ),
+        "status_text": (
+            "📊 <b>Sizning statusingiz</b>\n\n"
+            "👤 Ism: {name}\n"
+            "🆔 ID: <code>{uid}</code>\n"
+            "💎 Premium: {premium}\n"
+            "🎟 Referral kredit: <b>{credits} ta</b>\n\n"
+            "🔗 Referral havolangiz: /referral"
+        ),
     },
     "ru": {
         "choose_lang": "🌐 Выберите язык:",
@@ -81,6 +99,10 @@ TEXTS = {
         "help_btn": "❓ Помощь",
         "language_btn": "🌐 Язык",
         "support_btn": "📨 Написать администратору",
+        "status_btn": "📊 Мой статус",
+        "credits_btn": "🎟 Реф. кредиты",
+        "payment_btn": "💳 Оплата",
+        "about_btn": "ℹ️ О боте",
         "help_text": (
             "🆘 <b>Помощь</b>\n\n"
             "🎬 Чтобы найти фильм:\n"
@@ -126,6 +148,20 @@ TEXTS = {
             "📨 Вопросы: Написать администратору\n"
             "🌐 Язык: /til"
         ),
+        "credits_text": (
+            "🎟 <b>Ваши кредиты: {credits}</b>\n\n"
+            "Каждый друг, зашедший по вашей ссылке, даёт вам <b>1 кредит</b>!\n\n"
+            "🔗 Ваша ссылка:\n<code>{link}</code>\n\n"
+            "📤 Отправьте ссылку друзьям!"
+        ),
+        "status_text": (
+            "📊 <b>Ваш статус</b>\n\n"
+            "👤 Имя: {name}\n"
+            "🆔 ID: <code>{uid}</code>\n"
+            "💎 Премиум: {premium}\n"
+            "🎟 Реф. кредиты: <b>{credits}</b>\n\n"
+            "🔗 Реферальная ссылка: /referral"
+        ),
     },
     "en": {
         "choose_lang": "🌐 Choose language:",
@@ -145,6 +181,10 @@ TEXTS = {
         "help_btn": "❓ Help",
         "language_btn": "🌐 Language",
         "support_btn": "📨 Contact Admin",
+        "status_btn": "📊 My Status",
+        "credits_btn": "🎟 My Credits",
+        "payment_btn": "💳 Payment",
+        "about_btn": "ℹ️ About Bot",
         "help_text": (
             "🆘 <b>Help</b>\n\n"
             "🎬 To find a movie:\n"
@@ -189,6 +229,20 @@ TEXTS = {
             "  • Referral system\n\n"
             "📨 Questions: Contact Admin\n"
             "🌐 Language: /til"
+        ),
+        "credits_text": (
+            "🎟 <b>Your credits: {credits}</b>\n\n"
+            "Every friend who joins via your link gives you <b>1 credit</b>!\n\n"
+            "🔗 Your link:\n<code>{link}</code>\n\n"
+            "📤 Share your link with friends!"
+        ),
+        "status_text": (
+            "📊 <b>Your Status</b>\n\n"
+            "👤 Name: {name}\n"
+            "🆔 ID: <code>{uid}</code>\n"
+            "💎 Premium: {premium}\n"
+            "🎟 Referral credits: <b>{credits}</b>\n\n"
+            "🔗 Referral link: /referral"
         ),
     },
 }

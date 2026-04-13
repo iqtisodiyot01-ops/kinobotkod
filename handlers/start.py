@@ -1,4 +1,4 @@
-import os
+import asyncio
 from aiogram import Router, F, Bot
 from aiogram.filters import CommandStart, Command
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
@@ -63,11 +63,16 @@ async def cmd_start(message: Message, bot: Bot, lang: str):
             try:
                 referrer_id = int(arg[4:])
                 if referrer_id != message.from_user.id:
-                    new_credits = register_referral(referrer_id, message.from_user.id)
+                    # FIX #14: register_referral is a sync Supabase call inside async handler.
+                    loop = asyncio.get_event_loop()
+                    new_credits = await loop.run_in_executor(
+                        None, lambda: register_referral(referrer_id, message.from_user.id)
+                    )
                     if new_credits > 0:
                         try:
-                            from database.users import get_user_language
-                            referrer_lang = get_user_language(referrer_id) or "uz"
+                            referrer_lang = await loop.run_in_executor(
+                                None, lambda: get_user_language_safe(referrer_id)
+                            )
                         except Exception:
                             referrer_lang = "uz"
                         notify_text = get_text(
@@ -91,10 +96,17 @@ async def cmd_start(message: Message, bot: Bot, lang: str):
         )
         return
 
+    # FIX #15: .format() on welcome string — first_name can be None for some
+    # Telegram users (e.g. deleted accounts). Guard with empty string fallback.
     await message.answer(
         get_text(lang, "welcome").format(name=message.from_user.first_name or ""),
         reply_markup=main_menu(lang)
     )
+
+
+def get_user_language_safe(user_id: int) -> str:
+    from database.users import get_user_language
+    return get_user_language(user_id) or "uz"
 
 
 @router.callback_query(F.data == "check_sub")
@@ -125,7 +137,9 @@ async def check_sub_callback(call: CallbackQuery, bot: Bot, lang: str):
 @router.callback_query(F.data.startswith("lang_"))
 async def select_language(call: CallbackQuery, lang: str):
     new_lang = call.data.split("_")[1]
-    set_user_language(call.from_user.id, new_lang)
+    # FIX #16: set_user_language is sync — wrap in executor.
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(None, lambda: set_user_language(call.from_user.id, new_lang))
     try:
         await call.message.delete()
     except Exception:
@@ -146,10 +160,15 @@ async def help_handler(message: Message, lang: str):
 @router.message(F.text.in_(["📊 Statusim", "📊 Мой статус", "📊 My Status"]))
 async def status_handler(message: Message, lang: str):
     uid = message.from_user.id
-    is_prem = check_premium(uid)
-    credits = get_user_credits(uid)
+    loop = asyncio.get_event_loop()
+    is_prem = await loop.run_in_executor(None, lambda: check_premium(uid))
+    credits = await loop.run_in_executor(None, lambda: get_user_credits(uid))
     ref_link = _ref_link(uid)
-    status_label = {"uz": "💎 Premium", "ru": "💎 Премиум", "en": "💎 Premium"}.get(lang, "💎 Premium") if is_prem else {"uz": "❌ Oddiy", "ru": "❌ Обычный", "en": "❌ Regular"}.get(lang, "❌ Regular")
+    status_label = (
+        {"uz": "💎 Premium", "ru": "💎 Премиум", "en": "💎 Premium"}.get(lang, "💎 Premium")
+        if is_prem else
+        {"uz": "❌ Oddiy", "ru": "❌ Обычный", "en": "❌ Regular"}.get(lang, "❌ Regular")
+    )
     texts = {
         "uz": f"📊 <b>Sizning statusingiz:</b>\n\n🏷 Tarifingiz: <b>{status_label}</b>\n🎟 Kreditlaringiz: <b>{credits}</b>\n\n🔗 Referral havolangiz:\n<code>{ref_link}</code>",
         "ru": f"📊 <b>Ваш статус:</b>\n\n🏷 Тариф: <b>{status_label}</b>\n🎟 Кредиты: <b>{credits}</b>\n\n🔗 Реферальная ссылка:\n<code>{ref_link}</code>",
@@ -161,7 +180,8 @@ async def status_handler(message: Message, lang: str):
 @router.message(F.text.in_(["🎟 Referral kreditim", "🎟 Реф. кредиты", "🎟 My Credits"]))
 async def referral_handler(message: Message, lang: str):
     uid = message.from_user.id
-    credits = get_user_credits(uid)
+    loop = asyncio.get_event_loop()
+    credits = await loop.run_in_executor(None, lambda: get_user_credits(uid))
     ref_link = _ref_link(uid)
     texts = {
         "uz": f"🎟 <b>Referral kreditlaringiz:</b> <b>{credits}</b>\n\n🔗 Do'stlaringizga yuboring:\n<code>{ref_link}</code>\n\n✅ Har bir do'st qo'shilganda 1 kredit olasiz!",

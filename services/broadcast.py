@@ -12,8 +12,14 @@ BATCH_DELAY = 1.0
 
 
 async def run_broadcast(bot: Bot, message_text: str, admin_id: int) -> dict:
-    broadcast_id = create_broadcast(message_text)
-    user_ids = get_all_user_ids()
+    # FIX #13: Synchronous Supabase calls (create_broadcast, get_all_user_ids,
+    # update_broadcast_count) are called directly in an async function, blocking
+    # the event loop. Wrap in executor.
+    loop = asyncio.get_event_loop()
+
+    broadcast_id = await loop.run_in_executor(None, lambda: create_broadcast(message_text))
+    user_ids = await loop.run_in_executor(None, get_all_user_ids)
+
     total = len(user_ids)
     sent = 0
     failed = 0
@@ -25,6 +31,7 @@ async def run_broadcast(bot: Bot, message_text: str, admin_id: int) -> dict:
             await bot.send_message(uid, message_text)
             sent += 1
         except TelegramForbiddenError:
+            # User blocked the bot — expected, not an error
             failed += 1
         except TelegramRetryAfter as e:
             await asyncio.sleep(e.retry_after + 1)
@@ -43,7 +50,10 @@ async def run_broadcast(bot: Bot, message_text: str, admin_id: int) -> dict:
             await asyncio.sleep(BATCH_DELAY)
 
     if broadcast_id:
-        update_broadcast_count(broadcast_id, sent, "done")
+        await loop.run_in_executor(
+            None,
+            lambda: update_broadcast_count(broadcast_id, sent, "done")
+        )
 
     result = {"total": total, "sent": sent, "failed": failed}
     await bot.send_message(

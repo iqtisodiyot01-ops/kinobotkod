@@ -10,7 +10,7 @@ _key = (SUPABASE_KEY or "").strip()
 
 if not _url or not _url.startswith("http"):
     print(f"❌ SUPABASE_URL noto'g'ri: '{_url}'", file=sys.stderr)
-    print("   To'g'ri format: https://fkomjjvwdbxbapnivfez.supabase.co", file=sys.stderr)
+    print("   To'g'ri format: https://xxxx.supabase.co", file=sys.stderr)
     sys.exit(1)
 
 if not _key:

@@ -43,6 +43,14 @@ def register_user(user_id: int, full_name: str, username: str,
     try:
         res = supabase.table("users").select(f"{id_col},{lang_col}").eq(id_col, user_id).limit(1).execute()
         if res.data:
+            # FIX #4: Update full_name/username on every visit so profile stays fresh.
+            try:
+                supabase.table("users").update({
+                    "full_name": full_name or "",
+                    "username": username or "",
+                }).eq(id_col, user_id).execute()
+            except Exception:
+                pass
             return res.data[0].get(lang_col, "uz") or "uz"
         auto_lang = _detect_lang(telegram_lang)
         data = {
@@ -55,7 +63,12 @@ def register_user(user_id: int, full_name: str, username: str,
             "referral_count": 0,
             "credits": 0,
         }
-        supabase.table("users").insert(data).execute()
+        # FIX #5: Fallback to minimal insert if full insert fails (e.g. missing columns in old schema).
+        try:
+            supabase.table("users").insert(data).execute()
+        except Exception:
+            minimal = {id_col: user_id, lang_col: auto_lang}
+            supabase.table("users").insert(minimal).execute()
         return auto_lang
     except Exception as e:
         logger.error(f"register_user error: {e}")
@@ -116,8 +129,24 @@ def get_user_credits(user_id: int) -> int:
         return 0
 
 
+def use_credit(user_id: int) -> bool:
+    """Deduct one credit from user. Returns True if successful."""
+    id_col = _SCHEMA["id"]
+    try:
+        res = supabase.table("users").select("credits").eq(id_col, user_id).limit(1).execute()
+        if res.data:
+            current = int(res.data[0].get("credits") or 0)
+            if current > 0:
+                supabase.table("users").update({"credits": current - 1}).eq(id_col, user_id).execute()
+                return True
+        return False
+    except Exception as e:
+        logger.error(f"use_credit error: {e}")
+        return False
+
+
 def register_referral(referrer_id: int, new_user_id: int) -> int:
-    """Referrer ga credit beradi. Yangi credits sonini qaytaradi."""
+    """Give credit to referrer. Returns new credit total."""
     id_col = _SCHEMA["id"]
     try:
         res = supabase.table("users").select("credits,referral_count").eq(id_col, referrer_id).limit(1).execute()
@@ -142,8 +171,18 @@ def register_referral(referrer_id: int, new_user_id: int) -> int:
 def get_all_user_ids() -> list:
     id_col = _SCHEMA["id"]
     try:
-        res = supabase.table("users").select(id_col).execute()
-        return [row[id_col] for row in (res.data or [])]
+        # FIX #6: Supabase default row limit is 1000. Use pagination to get ALL users.
+        all_ids = []
+        page_size = 1000
+        offset = 0
+        while True:
+            res = supabase.table("users").select(id_col).range(offset, offset + page_size - 1).execute()
+            rows = res.data or []
+            all_ids.extend(row[id_col] for row in rows)
+            if len(rows) < page_size:
+                break
+            offset += page_size
+        return all_ids
     except Exception as e:
         logger.error(f"get_all_user_ids error: {e}")
         return []

@@ -1,3 +1,4 @@
+import asyncio
 from aiogram import Router, F, Bot
 from aiogram.types import Message
 from database.movies import get_movie_by_code, search_movies
@@ -31,15 +32,18 @@ async def handle_text(message: Message, bot: Bot, lang: str):
         )
         return
 
-    movie = get_movie_by_code(text)
+    # FIX #17: get_movie_by_code and search_movies are synchronous Supabase calls
+    # inside an async handler. Wrap in executor.
+    loop = asyncio.get_event_loop()
+    movie = await loop.run_in_executor(None, lambda: get_movie_by_code(text))
     if movie:
         await send_movie(message, movie, lang)
         return
 
-    results = search_movies(text)
+    results = await loop.run_in_executor(None, lambda: search_movies(text))
     if results:
         if len(results) == 1:
-            movie = get_movie_by_code(results[0]["code"])
+            movie = await loop.run_in_executor(None, lambda: get_movie_by_code(results[0]["code"]))
             if movie:
                 await send_movie(message, movie, lang)
                 return
@@ -51,6 +55,8 @@ async def handle_text(message: Message, bot: Bot, lang: str):
 
 async def send_movie(message: Message, movie: dict, lang: str):
     caption = f"🎬 <b>{movie['title']}</b>\n🔑 Kod: <code>{movie['code']}</code>"
+    if movie.get("description"):
+        caption += f"\n\n📝 {movie['description']}"
     if movie.get("file_id"):
         try:
             await message.answer_video(video=movie["file_id"], caption=caption, parse_mode="HTML")

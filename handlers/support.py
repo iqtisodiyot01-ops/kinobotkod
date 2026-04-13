@@ -1,3 +1,4 @@
+import asyncio
 from aiogram import Router, F, Bot
 from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 from aiogram.fsm.context import FSMContext
@@ -58,12 +59,17 @@ async def support_receive(message: Message, state: FSMContext, lang: str, bot: B
         await message.answer(texts.get(lang, texts["uz"]), reply_markup=main_menu(lang))
         return
 
+    # FIX #19: save_support_message is sync — wrap in executor.
     user = message.from_user
-    save_support_message(
-        telegram_id=user.id,
-        username=user.username or "",
-        first_name=user.first_name or "",
-        message=message.text or ""
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(
+        None,
+        lambda: save_support_message(
+            telegram_id=user.id,
+            username=user.username or "",
+            first_name=user.first_name or "",
+            message=message.text or ""
+        )
     )
 
     success_texts = {
@@ -89,4 +95,5 @@ async def support_receive(message: Message, state: FSMContext, lang: str, bot: B
         try:
             await bot.send_message(admin_id, admin_text, parse_mode="HTML")
         except Exception as e:
-            print(f"Admin {admin_id} ga xabar yuborishda xato: {e}")
+            import logging
+            logging.getLogger(__name__).warning(f"Admin {admin_id} ga xabar yuborishda xato: {e}")
