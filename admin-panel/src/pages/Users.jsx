@@ -40,23 +40,10 @@ function timeAgo(iso) {
   return formatDate(iso)
 }
 
-const SQL_MIGRATION = `-- Foydalanuvchi ismi va username saqlash uchun ustunlar:
-ALTER TABLE users ADD COLUMN IF NOT EXISTS full_name TEXT;
-ALTER TABLE users ADD COLUMN IF NOT EXISTS username TEXT;
-ALTER TABLE users ADD COLUMN IF NOT EXISTS lang TEXT DEFAULT 'uz';
-ALTER TABLE users ADD COLUMN IF NOT EXISTS last_seen TIMESTAMPTZ;
-ALTER TABLE users ADD COLUMN IF NOT EXISTS message_count INTEGER DEFAULT 0;
-ALTER TABLE users ADD COLUMN IF NOT EXISTS is_blocked BOOLEAN DEFAULT FALSE;
-ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
-
--- Bot middleware (handlers/middlewares/user.py) bu fieldlarni avtomatik saqlaydi.
--- Eski foydalanuvchilar uchun: keyingi xabar yuborilganda ma'lumot yangilanadi.`
-
 export default function Users() {
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [showSqlGuide, setShowSqlGuide] = useState(false)
   const [search, setSearch] = useState('')
   const [filterPremium, setFilterPremium] = useState('all')
   const [selected, setSelected] = useState(null)
@@ -101,7 +88,6 @@ export default function Users() {
   })
 
   const premiumCount = users.filter(u => u.is_premium).length
-  const noNameCount = users.filter(u => !getName(u)).length
 
   function openModal(u) {
     setSelected({ ...u })
@@ -186,24 +172,6 @@ export default function Users() {
           💎 {premiumCount} premium
         </span>
       </div>
-
-      {noNameCount > 0 && (
-        <div className="info-box">
-          <b>ℹ️ {noNameCount} ta foydalanuvchida ism yo'q.</b>{' '}
-          Bu foydalanuvchilar bot yangilanishidan oldin qo'shilgan. Yangi versiyada middleware avtomatik saqlaydi.
-          <button
-            onClick={() => setShowSqlGuide(!showSqlGuide)}
-            style={{ marginLeft: 8, background: 'none', border: '1px solid #1e3a5f', color: '#60a5fa', borderRadius: 6, padding: '2px 8px', cursor: 'pointer', fontSize: 12 }}
-          >
-            {showSqlGuide ? 'SQL yopish ▲' : 'SQL migratsiya ▼'}
-          </button>
-          {showSqlGuide && (
-            <pre style={{ background: '#0a0a0a', padding: 10, borderRadius: 6, fontSize: 11, color: '#86efac', overflow: 'auto', marginTop: 8 }}>
-              {SQL_MIGRATION}
-            </pre>
-          )}
-        </div>
-      )}
 
       <div className="card">
         <div className="card-header">

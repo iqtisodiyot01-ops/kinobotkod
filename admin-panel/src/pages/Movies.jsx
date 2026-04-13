@@ -120,7 +120,7 @@ export default function Movies() {
   const [movies, setMovies] = useState([])
   const [loading, setLoading] = useState(true)
   const [showAdd, setShowAdd] = useState(false)
-  const [showGuide, setShowGuide] = useState(false)
+  const [showGuide, setShowGuide] = useState(false) // file_id yo'riqnomasi uchun (SQL emas)
   const [search, setSearch] = useState('')
   const [form, setForm] = useState(emptyForm)
   const [saving, setSaving] = useState(false)
@@ -213,15 +213,6 @@ export default function Movies() {
     load()
   }
 
-  const sqlMigration = `-- Kinolar jadvaliga yangi ustunlar qo'shish (bir marta ishlatiladi):
-ALTER TABLE movies ADD COLUMN IF NOT EXISTS description TEXT;
-ALTER TABLE movies ADD COLUMN IF NOT EXISTS is_paid BOOLEAN DEFAULT FALSE;
-ALTER TABLE movies ADD COLUMN IF NOT EXISTS price INTEGER DEFAULT 0;
-ALTER TABLE movies ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
-
--- file_id uzun bo'lishi uchun (Telegram file_id ~100 belgi):
--- Supabase TEXT tipida avtomatik cheksiz uzunlik, VARCHAR cheklov yo'q.`
-
   return (
     <>
       <div className="page-title">🎬 Kinolar</div>
@@ -237,14 +228,8 @@ ALTER TABLE movies ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW()
         </button>
         {showGuide && (
           <div style={{ marginTop: 10, borderTop: '1px solid #1e3a5f', paddingTop: 10 }}>
-            <div style={{ marginBottom: 8 }}>
-              <b>file_id haqida:</b> Telegram file_id ~50-100 belgilik uzun string (BAACAgIA... kabi).
-              Uni nusxalashda <b>to'liq</b> nusxalang — qirqib qolmang.
-            </div>
-            <b>SQL (yangi ustunlar, bir marta):</b>
-            <pre style={{ background: '#0a0a0a', padding: 10, borderRadius: 6, fontSize: 11, color: '#86efac', overflow: 'auto', marginTop: 6 }}>
-              {sqlMigration}
-            </pre>
+            <b>file_id haqida:</b> Telegram file_id ~50-100 belgilik uzun string (BAACAgIA... kabi).
+            Uni nusxalashda <b>to'liq</b> nusxalang — qirqib qolmang.
           </div>
         )}
       </div>
